@@ -4,7 +4,7 @@
 
 An HTTP service backed by an LLM agent (Google ADK) with openweight model backend that estimates the market value of a used car based on:
 - **Brand**: BMW, Volvo, Toyota, Honda, etc.
-- **Model**: 
+- **Model** 
 - **Year**: the year the car was manufactured
 - **Market**: US, Germany, Japan, etc.
 
