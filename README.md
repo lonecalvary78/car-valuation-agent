@@ -1,4 +1,6 @@
-# Car Valuation Agent
+# Car Valuer Agent
+
+[![car-valuer-agent-ci](https://github.com/lonecalvary78/car-valuer-agent/actions/workflows/ci.yaml/badge.svg)](https://github.com/lonecalvary78/car-valuer-agent/actions/workflows/ci.yaml)
 
 An HTTP service backed by an LLM agent (Google ADK) with openweight model backend that estimates the market value of a used car based on:
 - **Brand**: BMW, Volvo, Toyota, Honda, etc.
