@@ -1,0 +1,14 @@
+services:
+  car-valuer-agent:
+    image: car-valuer-agent
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILD_VERSION=1.0.0
+        - SERVER_PORT=8585
+      no_cache: true
+    ports:
+      - 8585:8585
+    env_file:
+      - .env
