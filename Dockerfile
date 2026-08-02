@@ -11,7 +11,7 @@ COPY internal /builder/internal
 ENV CGO_ENABLED=0
 RUN go build -o /builder/car-valuer-agent ./cmd/api
 
-FROM debian:latest
+FROM debian:trixie-slim
 ARG SERVER_PORT="8080"
 LABEL image-name=car-valuer-agent
 LABEL BUILD_VERSION=1.0.0
