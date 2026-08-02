@@ -68,15 +68,29 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
-	if h.activeAgentRunner != nil {
-		response := model.OfResponse("OK")
-		responseBytes, err := response.ToJSON()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		w.Header().Add("Content-Type", "application/json")
-		w.Write(responseBytes)
+	var response model.HealthCheckResponse
+	status := http.StatusOK
+	if h.IsAagentRunning() {
+		response = model.OfResponse("UP")
+	} else {
+		response = model.OfResponse("DOWN")
+		status = http.StatusServiceUnavailable
 	}
+
+	responseBytes, err := response.ToJSON()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	w.Write(responseBytes)
+}
+
+func (h Handler) IsAagentRunning() bool {
+	if h.activeAgentRunner != nil {
+		return true
+	}
+	return false
 }
