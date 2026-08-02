@@ -38,7 +38,9 @@ func main() {
 	}
 
 	agentRunner, err := util.OfRunner(carValuerAgent, memory.InMemoryService(), session.InMemoryService(), true)
-
+	if err != nil {
+		log.Fatalf("error: %v", err.Error())
+	}
 	handler := handler.New(*agentRunner)
 	wrappedHandler := middeware.Chain(handler.RegisterRoutes(), middeware.Logging, middeware.Recovery)
 
