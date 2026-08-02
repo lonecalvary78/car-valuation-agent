@@ -11,8 +11,8 @@ func Load() AppConfig {
 		server: Server{
 			Host:        os.Getenv("SERVER_HOST"),
 			Port:        getEnvAsInt(os.Getenv("SERVER_PORT"), 8080),
-			ReadTimeout: getEnvAsDuration(os.Getenv("SERVER_READ_TIME"), 30*time.Second),
-			Writetimout: getEnvAsDuration(os.Getenv("SERVER_WRITE_TIME"), 2*time.Minute),
+			ReadTimeout: getEnvAsDuration(os.Getenv("SERVER_READ_TIMEOUT"), 30*time.Second),
+			Writetimout: getEnvAsDuration(os.Getenv("SERVER_WRITE_TIMEOUT"), 2*time.Minute),
 		},
 		agent: Agent{
 			Name: os.Getenv("AGENT_NAME"),
