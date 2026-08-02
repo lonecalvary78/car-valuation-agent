@@ -30,7 +30,7 @@ func Logging(next http.Handler) http.Handler {
 			statusCode:     http.StatusOK, // Default status
 		}
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(wrapped, r)
 
 		log.Printf("%d %s %s %v",
 			wrapped.statusCode,
