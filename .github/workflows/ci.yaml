@@ -1,9 +1,12 @@
 name: car-valuer-agent-ci
 
-on: 
+on:
   push:
     branches:
       - master
+    paths-ignore:
+      - "README.md"
+      - "docker-compose.yaml"
 jobs:
   build-agent:
     runs-on: ubuntu-latest
