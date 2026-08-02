@@ -27,7 +27,7 @@ jobs:
       - name: Build And Push
         uses: docker/build-push-action@v7
         with:
-          tags: ${{github.actor}}/car-valuer-agent
+          tags: ghcr.io/${{ github.actor }}/car-valuer-agent
           push: true  
           build-args: |
             BUILD_VERSION=${{ env.BUILD_NUMBER }}
