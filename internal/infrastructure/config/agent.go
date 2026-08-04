@@ -7,9 +7,28 @@ type Agent struct {
 }
 
 type Model struct {
-	BaseUrl   string
-	ApiKey    string
-	ModelName string
+	BaseUrl      string
+	ApiKey       string
+	ModelName    string
+	AdvanceSetup AdvanceSetup
+}
+
+type AdvanceSetup struct {
+	Temperature      float32
+	TopP             float32
+	TopK             float32
+	PresencePenalty  float32
+	FrequencyPenalty float32
+	MaximumTokens    int32
+}
+
+func (advancedSetup AdvanceSetup) HasAdvancedSetup() bool {
+	return advancedSetup.Temperature > 0.0 &&
+		advancedSetup.TopK > 0.0 &&
+		advancedSetup.TopP > 0.0 &&
+		advancedSetup.PresencePenalty > 0.0 &&
+		advancedSetup.FrequencyPenalty > 0.0 &&
+		advancedSetup.MaximumTokens > 0
 }
 
 type Skill struct {

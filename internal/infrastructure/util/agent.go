@@ -3,60 +3,63 @@ package util
 import (
 	"car-valuation-agent/internal/infrastructure/config"
 	"context"
+
 	"google.golang.org/adk/v2/agent"
 	"google.golang.org/adk/v2/agent/llmagent"
+	"google.golang.org/adk/v2/model"
 	"google.golang.org/adk/v2/model/openaimodel"
 	"google.golang.org/adk/v2/tool"
 	"google.golang.org/genai"
 )
 
 func OfAgent(ctx context.Context, instruction string, appConfig config.AppConfig, tools []tool.Toolset) (agent.Agent, error) {
-	llm, err := openaimodel.NewModel(ctx, appConfig.GetAgent().GetModel().ModelName, &openaimodel.ClientConfig{
-		BaseURL: appConfig.GetAgent().GetModel().BaseUrl,
-		APIKey:  appConfig.GetAgent().GetModel().ApiKey,
+	agentConfig := appConfig.GetAgent()
+	modelConfig := appConfig.GetAgent().GetModel()
+	modelAdvancedSetup := modelConfig.AdvanceSetup
+	if modelAdvancedSetup.HasAdvancedSetup() {
+		return withAdvanceSetup(ctx, instruction, agentConfig, modelConfig, modelAdvancedSetup, tools)
+	} else {
+		return withSimpleSetup(ctx, instruction, agentConfig, modelConfig, tools)
+	}
+}
+
+func ofModel(ctx context.Context, modelConfig config.Model) (model.LLM, error) {
+	return openaimodel.NewModel(ctx, modelConfig.ModelName, &openaimodel.ClientConfig{
+		BaseURL: modelConfig.BaseUrl,
+		APIKey:  modelConfig.ApiKey,
 	})
+}
+
+func withSimpleSetup(ctx context.Context, instruction string, agentConfig config.Agent, modelConfig config.Model, tools []tool.Toolset) (agent.Agent, error) {
+	llm, err := ofModel(ctx, modelConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	return llmagent.New(llmagent.Config{
-		Name:        appConfig.GetAgent().Name,
+		Name:        agentConfig.Name,
 		Model:       llm,
 		Instruction: instruction,
 		Toolsets:    tools,
 	})
-
 }
 
-func OfAgentWithAdvancedConfiguration(
-	ctx context.Context,
-	instruction string,
-	appConfig config.AppConfig,
-	tools []tool.Toolset,
-	temperature float32,
-	topP float32,
-	topK float32,
-	presencePenalty float32,
-	frequencyPenalty float32,
-	maximumOutputTokens int32) (agent.Agent, error) {
-	llm, err := openaimodel.NewModel(ctx, appConfig.GetAgent().GetModel().ModelName, &openaimodel.ClientConfig{
-		BaseURL: appConfig.GetAgent().GetModel().BaseUrl,
-		APIKey:  appConfig.GetAgent().GetModel().ApiKey,
-	})
+func withAdvanceSetup(ctx context.Context, instruction string, agentConfig config.Agent, modelConfig config.Model, advancedSetup config.AdvanceSetup, tools []tool.Toolset) (agent.Agent, error) {
+	llm, err := ofModel(ctx, modelConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	return llmagent.New(llmagent.Config{
-		Name:  appConfig.GetAgent().Name,
+		Name:  agentConfig.Name,
 		Model: llm,
 		GenerateContentConfig: &genai.GenerateContentConfig{
-			Temperature:      &temperature,
-			TopP:             &topP,
-			TopK:             &topK,
-			PresencePenalty:  &presencePenalty,
-			FrequencyPenalty: &frequencyPenalty,
-			MaxOutputTokens:  maximumOutputTokens,
+			Temperature:      &advancedSetup.Temperature,
+			TopP:             &advancedSetup.TopP,
+			TopK:             &advancedSetup.TopK,
+			PresencePenalty:  &advancedSetup.PresencePenalty,
+			FrequencyPenalty: &advancedSetup.FrequencyPenalty,
+			MaxOutputTokens:  advancedSetup.MaximumTokens,
 		},
 		Instruction: instruction,
 		Toolsets:    tools,
