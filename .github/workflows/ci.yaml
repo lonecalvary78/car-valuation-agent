@@ -11,10 +11,10 @@ on:
       - ".claude/**"
 jobs:
   linter-check:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: $${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -25,7 +25,6 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          os: ${{ matrix.os }}
           version: v2.12
   
   unit-tests:
@@ -36,6 +35,8 @@ jobs:
         uses: actions/checkout@v7
       - name: Setup Go
         uses: actions/setup-go@v6
+        with: 
+          go-version: 1.26.5  
       - name: Run all unit tests with coverage
         run: go test ./... -cover  
   build-agent:
