@@ -20,6 +20,14 @@ func Load() AppConfig {
 				BaseUrl:   os.Getenv("BASE_URL"),
 				ApiKey:    os.Getenv("API_KEY"),
 				ModelName: os.Getenv("MODEL_NAME"),
+				AdvanceSetup: AdvanceSetup{
+					Temperature:      getEnvAsFloat(os.Getenv("TEMPERATURE"), 0.0),
+					TopP:             getEnvAsFloat(os.Getenv("TOP_P"), 0.0),
+					TopK:             getEnvAsFloat(os.Getenv("TOP_K"), 0.0),
+					PresencePenalty:  getEnvAsFloat(os.Getenv("PRESENCE_PENALTY"), 0.0),
+					FrequencyPenalty: getEnvAsFloat(os.Getenv("FREQUENCY_PENALTY"), 0.0),
+					MaximumTokens:    int32(getEnvAsInt(os.Getenv("MAX_TOKKENS"), 0)),
+				},
 			},
 			skill: Skill{
 				Location: os.Getenv("SKILL_LOCATION"),
@@ -34,6 +42,14 @@ func getEnvAsInt(envVariableValue string, defaultValue int) int {
 		return defaultValue
 	}
 	return convertedEnvVariableValue
+}
+
+func getEnvAsFloat(envVariableValue string, defaultValue float32) float32 {
+	convertedEnvVariableValue, err := strconv.ParseFloat(envVariableValue, 32)
+	if err != nil {
+		return defaultValue
+	}
+	return float32(convertedEnvVariableValue)
 }
 
 func getEnvAsDuration(envVariableValue string, defaultValue time.Duration) time.Duration {
