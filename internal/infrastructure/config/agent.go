@@ -13,7 +13,6 @@ type Model struct {
 }
 
 type Skill struct {
-	Name     string
 	Location string
 }
 
