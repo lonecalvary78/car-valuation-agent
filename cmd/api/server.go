@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"google.golang.org/adk/v2/memory"
 	"google.golang.org/adk/v2/session"
@@ -32,7 +33,6 @@ func main() {
 	}
 
 	carValuerAgent, err := util.OfAgent(ctx, agentInstruction, appConfig, []tool.Toolset{skillBasedTool})
-
 	if err != nil {
 		log.Fatalf("error: %v", err.Error())
 	}
@@ -61,10 +61,13 @@ func main() {
 }
 
 func handleGarcefullyShutdown(ctx context.Context, agentServer *http.Server) {
-	quit := make(chan os.Signal, 0)
+	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	if err := agentServer.Shutdown(ctx); err != nil {
+
+	shutdownCtx, shutdownComplete := context.WithTimeout(ctx, 30*time.Second)
+	defer shutdownComplete()
+	if err := agentServer.Shutdown(shutdownCtx); err != nil {
 		log.Printf("handleGarcefullyShutdown[error: %v]", err.Error())
 	}
 	log.Printf("the agent is successfully shotdown")
