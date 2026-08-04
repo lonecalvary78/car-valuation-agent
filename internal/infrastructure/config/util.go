@@ -22,7 +22,6 @@ func Load() AppConfig {
 				ModelName: os.Getenv("MODEL_NAME"),
 			},
 			skill: Skill{
-				Name:     os.Getenv("SKILL_NAME"),
 				Location: os.Getenv("SKILL_LOCATION"),
 			},
 		},
