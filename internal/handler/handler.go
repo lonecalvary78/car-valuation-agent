@@ -4,8 +4,10 @@ import (
 	"car-valuation-agent/internal/infrastructure/util"
 	"car-valuation-agent/internal/model"
 	"io"
+	"log"
 	"net/http"
 
+	"github.com/google/uuid"
 	"google.golang.org/adk/v2/agent"
 	"google.golang.org/adk/v2/runner"
 	"google.golang.org/genai"
@@ -40,9 +42,14 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Header.Get("x-user-id") != "" {
+		userId, _ := uuid.Parse(r.Header.Get("x-user-id"))
+		chatRequest.SetUserId(userId)
+	}
+
 	if chatRequest.SessionId == "" {
 		sessionId := util.NewSessionId()
-		chatRequest.SessionId = sessionId.String()
+		chatRequest.SetSesionId(sessionId)
 	}
 
 	content := genai.NewContentFromText(chatRequest.Message, genai.RoleUser)
@@ -63,8 +70,9 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(response))
-
+	if _, err := w.Write([]byte(response)); err != nil {
+		log.Printf("askToAgent[error writing response: %v]", err)
+	}
 }
 
 func (h Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
@@ -85,12 +93,11 @@ func (h Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	w.Write(responseBytes)
+	if _, err := w.Write(responseBytes); err != nil {
+		log.Printf("healthCheck[error writing response: %v]", err)
+	}
 }
 
 func (h Handler) IsAagentRunning() bool {
-	if h.activeAgentRunner != nil {
-		return true
-	}
-	return false
+	return h.activeAgentRunner != nil
 }
