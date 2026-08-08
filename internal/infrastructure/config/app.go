@@ -23,7 +23,7 @@ func (config AppConfig) GetRedis() Redis {
 	return config.redis
 }
 
-func (config AppConfig) Valiadte() error {
+func (config AppConfig) Validate() error {
 	validationErrors := make([]error, 0)
 	var validationError error
 	//Server Config
