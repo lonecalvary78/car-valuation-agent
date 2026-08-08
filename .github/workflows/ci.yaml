@@ -13,7 +13,7 @@ jobs:
   linter-check:
     strategy:
       matrix:
-        os: ["ubuntue-latest", "macos-latest"]
+        os: ["ubuntu-latest", "macos-latest"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
