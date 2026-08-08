@@ -1,6 +1,7 @@
 .vscode
 .claude/agent-memory
+.DS_Store
 
-## Exclude 
+## Exclude all secret files
 .env
-deployments/secret
+**/secret
