@@ -9,6 +9,7 @@ on:
       - "docker-compose.yaml"
       - "CLAUDE.md"
       - ".claude/**"
+      - "deployments/**"
 jobs:
   linter-check:
     strategy:
