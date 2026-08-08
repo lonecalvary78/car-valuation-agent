@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: car-valuation-ai
+  labels:
+    app: car-valuation-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: car-valuation-ai
+  template:
+    metadata:
+      labels:
+        app: car-valuation-ai
+    spec:
+      containers:
+        - name: car-valuation-ai
+          image: ghcr.io/lonecalvary78/car-valuation-agent
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "1"
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 384Mi
+          ports:
+            - containerPort: 8585
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8585
+              initialDelaySeconds: 5
+              periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8585
+              initialDelaySeconds: 5
+              periodSeconds: 5  
+          env:
+            - name: BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: BASE_URL                
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: car-valuation-ai-secret
+                  key: API_KEY
+            - name: MODEL_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: MODEL_NAME
+            - name: AGENT_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: AGENT_NAME
+            - name: SKILL_LOCATION
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: SKILL_LOCATION
+            - name: TEMPERATURE
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: TEMPERATURE
+            - name: TOP_K
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: TOP_K
+            - name: TOP_P
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: TOP_P
+            - name: FREQUENCY_PENALTY
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: FREQUENCY_PENALTY      
+            - name: PRESENCE_PENALTY
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: PRESENCE_PENALTY
