@@ -26,6 +26,6 @@ func TestCreateRunner(t *testing.T) {
 	agent := newAgent(t)
 	runner, err := OfRunner(agent, memory.InMemoryService(), session.InMemoryService(), true)
 	require.NoError(t, err)
-	require.Equal(t, "car-valuer-agent", agent.Name())
+	require.Equal(t, "car-valuation-agent", agent.Name())
 	require.NotEmpty(t, runner)
 }
