@@ -10,6 +10,12 @@ An HTTP service backed by an LLM agent (Google ADK) with any openweight model ba
 
 The agent is instructed to answer using a `car-valuer` skill (see [skills/car-valuer/SKILL.md](skills/car-valuer/SKILL.md)) rather than its own background knowledge, and replies with a structured JSON price range.
 
+## Trade-offs
+- Both memory and session are still using in-memory
+- No setup with TLS
+- No support for Gemini model support
+- No user authentication
+
 ## Stack
 - **Language**: Go
 - **Libraries**: `net/http`, [`adk-go`](https://google.golang.org/adk/v2), [`sonic`](https://github.com/bytedance/sonic) (JSON), [`decimal`](https://github.com/shopspring/decimal) (money)
@@ -45,7 +51,7 @@ go vet ./...                 # Static analysis
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/chat` | Send `{"userId", "sessionId", "message"}`; returns the agent's reply as plain text. `sessionId` is generated automatically if omitted. |
+| `POST` | `/chat` | Send `{"userId", "sessionId", "message"}`; returns the agent's reply with JSON format. `sessionId` is generated automatically if omitted. |
 | `GET` | `/health` | Returns `{"status", "checked_at"}`. |
 
 Example:
