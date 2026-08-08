@@ -3,7 +3,7 @@ package main
 import (
 	"car-valuation-agent/internal/handler"
 	"car-valuation-agent/internal/infrastructure/config"
-	"car-valuation-agent/internal/infrastructure/middeware"
+	"car-valuation-agent/internal/infrastructure/middleware"
 	"car-valuation-agent/internal/infrastructure/util"
 	"context"
 	"errors"
@@ -20,12 +20,16 @@ import (
 )
 
 const (
-	agentInstruction = "You are a car valuer agent. Please `car-valuer skill` to get the market price instead your own knowldge. The response should only the output described on the skill"
+	agentInstruction = "You are a car valuer agent. Use `car-valuer` skill to get the market price instead your own knowldge. The response should only the output described on the skill"
 )
 
 func main() {
 	ctx := context.Background()
 	appConfig := config.Load()
+	if err := appConfig.Validate(); err != nil {
+		log.Fatalf("there are some error when it verify the application configuration[error: %v]", err.Error())
+	}
+
 	skillBasedTool, err := util.OfSkillBasedTool(ctx, appConfig.GetAgent().GetSkill().Location)
 
 	if err != nil {
@@ -41,14 +45,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("error: %v", err.Error())
 	}
+
 	handler := handler.New(*agentRunner)
-	wrappedHandler := middeware.Chain(handler.RegisterRoutes(), middeware.Logging, middeware.Recovery)
+	wrappedHandler := middleware.Chain(handler.RegisterRoutes(), middleware.Logging, middleware.Recovery)
 
 	agentServer := &http.Server{
 		Addr:         appConfig.GetServer().GetAddr(),
 		Handler:      wrappedHandler,
 		ReadTimeout:  appConfig.GetServer().ReadTimeout,
-		WriteTimeout: appConfig.GetServer().Writetimout,
+		WriteTimeout: appConfig.GetServer().WriteTimeout,
 	}
 
 	go func() {
@@ -57,10 +62,10 @@ func main() {
 			log.Fatalf("error: %v", err.Error())
 		}
 	}()
-	handleGarcefullyShutdown(ctx, agentServer)
+	handleGracefullyShutdown(ctx, agentServer)
 }
 
-func handleGarcefullyShutdown(ctx context.Context, agentServer *http.Server) {
+func handleGracefullyShutdown(ctx context.Context, agentServer *http.Server) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
