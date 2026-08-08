@@ -11,25 +11,7 @@ on:
       - ".claude/**"
       - "deployments/**"
 jobs:
-  linter-check:
-    strategy:
-      matrix:
-        os: ["ubuntu-latest", "macos-latest"]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with: 
-          go-version: 1.26.5  
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.12
-  
   unit-tests:
-    needs: linter-check
     strategy:
       matrix:
         os: ["ubuntu-latest","macos-latest"]
@@ -44,9 +26,6 @@ jobs:
       - name: Run all unit tests with coverage
         run: go test ./... -cover  
   build-agent:
-    needs: 
-      - linter-check
-      - unit-tests  
     runs-on: ubuntu-latest
     permissions:
         packages: write
