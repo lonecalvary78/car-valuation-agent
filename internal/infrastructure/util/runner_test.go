@@ -4,16 +4,11 @@ import (
 	"iter"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/adk/v2/agent"
 	"google.golang.org/adk/v2/memory"
 	"google.golang.org/adk/v2/session"
 )
-
-type mockAgent struct {
-	mock.Mock
-}
 
 func newAgent(t *testing.T) agent.Agent {
 	t.Helper()
