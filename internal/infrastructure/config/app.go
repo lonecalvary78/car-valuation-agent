@@ -8,7 +8,6 @@ import (
 type AppConfig struct {
 	server Server
 	agent  Agent
-	redis  Redis
 }
 
 func (config AppConfig) GetServer() Server {
@@ -17,10 +16,6 @@ func (config AppConfig) GetServer() Server {
 
 func (config AppConfig) GetAgent() Agent {
 	return config.agent
-}
-
-func (config AppConfig) GetRedis() Redis {
-	return config.redis
 }
 
 func (config AppConfig) Validate() error {
@@ -36,7 +31,7 @@ func (config AppConfig) Validate() error {
 	if validationError = validator.ValidateForRequiredOfDuration("Read TimeOut", config.GetServer().ReadTimeout); validationError != nil {
 		validationErrors = append(validationErrors, validationError)
 	}
-	if validationError = validator.ValidateForRequiredOfDuration("Write TimeOut", config.GetServer().Writetimout); validationError != nil {
+	if validationError = validator.ValidateForRequiredOfDuration("Write TimeOut", config.GetServer().WriteTimeout); validationError != nil {
 		validationErrors = append(validationErrors, validationError)
 	}
 
@@ -54,19 +49,11 @@ func (config AppConfig) Validate() error {
 		validationErrors = append(validationErrors, validationError)
 	}
 
-	if validationError = validator.ValidateForRequiredOfString("Model Name", config.GetAgent().GetModel().ApiKey); validationError != nil {
+	if validationError = validator.ValidateForRequiredOfString("Model Name", config.GetAgent().GetModel().ModelName); validationError != nil {
 		validationErrors = append(validationErrors, validationError)
 	}
 
 	if validationError = validator.ValidateForRequiredOfString("Skill - Location", config.GetAgent().GetSkill().Location); validationError != nil {
-		validationErrors = append(validationErrors, validationError)
-	}
-
-	//Redis Config
-	if validationError = validator.ValidateForRequiredOfString("Host", config.GetRedis().Host); validationError != nil {
-		validationErrors = append(validationErrors, validationError)
-	}
-	if validationError = validator.ValidateForRequiredOfNumeric("Port", config.GetRedis().Port); validationError != nil {
 		validationErrors = append(validationErrors, validationError)
 	}
 
