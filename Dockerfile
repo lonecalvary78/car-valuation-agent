@@ -12,7 +12,7 @@ ENV CGO_ENABLED=0
 RUN go build -o /builder/car-valuer-agent ./cmd/api
 
 FROM debian:trixie-slim
-ARG SERVER_PORT="8080"
+ARG SERVER_PORT="8585"
 LABEL image-name=car-valuation-agent
 LABEL BUILD_VERSION=1.0.0
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
