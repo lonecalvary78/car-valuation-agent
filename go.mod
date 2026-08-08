@@ -5,6 +5,7 @@ go 1.26.5
 require (
 	github.com/bytedance/sonic v1.15.2
 	github.com/google/uuid v1.6.0
+	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/adk/v2 v2.1.0
 	google.golang.org/genai v1.63.0
