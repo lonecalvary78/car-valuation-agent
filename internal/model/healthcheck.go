@@ -2,8 +2,6 @@ package model
 
 import (
 	"time"
-
-	"github.com/bytedance/sonic"
 )
 
 type HealthCheckResponse struct {
@@ -16,8 +14,4 @@ func OfResponse(status string) HealthCheckResponse {
 		Status:    status,
 		CheckedAt: time.Now(),
 	}
-}
-
-func (hc *HealthCheckResponse) ToJSON() ([]byte, error) {
-	return sonic.Marshal(hc)
 }

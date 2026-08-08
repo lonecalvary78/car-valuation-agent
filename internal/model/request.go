@@ -24,14 +24,11 @@ func (chat *ChatRequest) Validate() error {
 	if validationError := validator.ValidateForRequiredOfString("UserId", chat.UserId); validationError != nil {
 		validationErrors = append(validationErrors, validationError)
 	}
-	if validationError := validator.ValidateForRequiredOfString("SessionId", chat.SessionId); validationError != nil {
-		validationErrors = append(validationErrors, validationError)
-	}
 
 	return errors.Join(validationErrors...)
 }
 
-func (chat *ChatRequest) SetSesionId(sesionId uuid.UUID) {
+func (chat *ChatRequest) SetSessionId(sesionId uuid.UUID) {
 	chat.SessionId = sesionId.String()
 }
 

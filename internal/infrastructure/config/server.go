@@ -6,10 +6,10 @@ import (
 )
 
 type Server struct {
-	Host        string
-	Port        int
-	ReadTimeout time.Duration
-	Writetimout time.Duration
+	Host         string
+	Port         int
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
 }
 
 func (server Server) GetAddr() string {

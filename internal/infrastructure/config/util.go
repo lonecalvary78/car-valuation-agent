@@ -9,10 +9,10 @@ import (
 func Load() AppConfig {
 	return AppConfig{
 		server: Server{
-			Host:        os.Getenv("SERVER_HOST"),
-			Port:        getEnvAsInt(os.Getenv("SERVER_PORT"), 8080),
-			ReadTimeout: getEnvAsDuration(os.Getenv("SERVER_READ_TIMEOUT"), 30*time.Second),
-			Writetimout: getEnvAsDuration(os.Getenv("SERVER_WRITE_TIMEOUT"), 2*time.Minute),
+			Host:         os.Getenv("SERVER_HOST"),
+			Port:         getEnvAsInt(os.Getenv("SERVER_PORT"), 8080),
+			ReadTimeout:  getEnvAsDuration(os.Getenv("SERVER_READ_TIMEOUT"), 30*time.Second),
+			WriteTimeout: getEnvAsDuration(os.Getenv("SERVER_WRITE_TIMEOUT"), 2*time.Minute),
 		},
 		agent: Agent{
 			Name: os.Getenv("AGENT_NAME"),
@@ -26,7 +26,7 @@ func Load() AppConfig {
 					TopK:             getEnvAsFloat(os.Getenv("TOP_K"), 0.0),
 					PresencePenalty:  getEnvAsFloat(os.Getenv("PRESENCE_PENALTY"), 0.0),
 					FrequencyPenalty: getEnvAsFloat(os.Getenv("FREQUENCY_PENALTY"), 0.0),
-					MaximumTokens:    int32(getEnvAsInt(os.Getenv("MAX_TOKKENS"), 0)),
+					MaximumTokens:    int32(getEnvAsInt(os.Getenv("MAX_TOKENS"), 0)),
 				},
 			},
 			skill: Skill{

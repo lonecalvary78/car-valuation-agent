@@ -42,18 +42,27 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("x-user-id") != "" {
-		userId, _ := uuid.Parse(r.Header.Get("x-user-id"))
+	if r.Header.Get("X-USER-ID") != "" {
+		userId, err := uuid.Parse(r.Header.Get("x-user-id"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		chatRequest.SetUserId(userId)
 	}
 
 	if chatRequest.SessionId == "" {
 		sessionId := util.NewSessionId()
-		chatRequest.SetSesionId(sessionId)
+		chatRequest.SetSessionId(sessionId)
 	}
 
 	content := genai.NewContentFromText(chatRequest.Message, genai.RoleUser)
-	var response string
+	var agentResponse string
+	if err := chatRequest.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	for event, err := range h.activeAgentRunner.Run(r.Context(), chatRequest.UserId, chatRequest.SessionId, content, agent.RunConfig{}) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -63,14 +72,18 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 		if event.Content != nil {
 			for _, part := range event.Content.Parts {
 				if part.Text != "" && !part.Thought {
-					response += part.Text
+					agentResponse += part.Text
 				}
 			}
 		}
 	}
+	var carValuationResponse model.CarValuationResponse
+	if err := util.FromJSON(agentResponse, &carValuationResponse); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write([]byte(response)); err != nil {
+	if err := util.WriteJSON(w, carValuationResponse, http.StatusOK); err != nil {
 		log.Printf("askToAgent[error writing response: %v]", err)
 	}
 }
@@ -78,26 +91,18 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 func (h Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	var response model.HealthCheckResponse
 	status := http.StatusOK
-	if h.IsAagentRunning() {
+	if h.isAgentRunning() {
 		response = model.OfResponse("UP")
 	} else {
 		response = model.OfResponse("DOWN")
 		status = http.StatusServiceUnavailable
 	}
 
-	responseBytes, err := response.ToJSON()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if _, err := w.Write(responseBytes); err != nil {
+	if err := util.WriteJSON(w, response, status); err != nil {
 		log.Printf("healthCheck[error writing response: %v]", err)
 	}
 }
 
-func (h Handler) IsAagentRunning() bool {
+func (h Handler) isAgentRunning() bool {
 	return h.activeAgentRunner != nil
 }
