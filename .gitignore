@@ -3,3 +3,4 @@
 
 ## Exclude 
 .env
+deployments/secret
