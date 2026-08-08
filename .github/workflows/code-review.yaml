@@ -31,5 +31,5 @@ jobs:
             the code-reviewer agent as a background/async task, this run will end
             before it finishes and you will never receive its findings. Run it
             synchronously (foreground) so its full findings are included in your
-            final response.
+            final response. Please present the review summary using markdown format
           show_full_output: true
