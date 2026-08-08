@@ -3,9 +3,11 @@ package handler
 import (
 	"car-valuation-agent/internal/infrastructure/util"
 	"car-valuation-agent/internal/model"
+	"context"
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/adk/v2/agent"
@@ -56,14 +58,18 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 		chatRequest.SetSessionId(sessionId)
 	}
 
-	content := genai.NewContentFromText(chatRequest.Message, genai.RoleUser)
-	var agentResponse string
 	if err := chatRequest.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	for event, err := range h.activeAgentRunner.Run(r.Context(), chatRequest.UserId, chatRequest.SessionId, content, agent.RunConfig{}) {
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Minute)
+	defer cancel()
+
+	content := genai.NewContentFromText(chatRequest.Message, genai.RoleUser)
+
+	var agentResponse string
+	for event, err := range h.activeAgentRunner.Run(ctx, chatRequest.UserId, chatRequest.SessionId, content, agent.RunConfig{}) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -77,6 +83,7 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
 	var carValuationResponse model.CarValuationResponse
 	if err := util.FromJSON(agentResponse, &carValuationResponse); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

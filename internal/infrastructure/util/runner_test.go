@@ -13,8 +13,8 @@ import (
 func newAgent(t *testing.T) agent.Agent {
 	t.Helper()
 	createdAgent, _ := agent.New(agent.Config{
-		Name:        "car-valuer-agent",
-		Description: "car-valuer-agent",
+		Name:        "car-valuation-agent",
+		Description: "car-valuation-agent",
 		Run: func(ic agent.InvocationContext) iter.Seq2[*session.Event, error] {
 			return func(yield func(*session.Event, error) bool) {}
 		},
