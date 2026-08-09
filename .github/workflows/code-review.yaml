@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "Kind of cation"
+        description: "Kind of action"
         required: false
         default: "code-review"  
 jobs:
