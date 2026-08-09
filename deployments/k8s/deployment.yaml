@@ -31,14 +31,14 @@ spec:
             httpGet:
               path: /health
               port: 8585
-              initialDelaySeconds: 5
-              periodSeconds: 5
+            initialDelaySeconds: 5
+            periodSeconds: 5
           readinessProbe:
             httpGet:
               path: /health
               port: 8585
-              initialDelaySeconds: 5
-              periodSeconds: 5  
+            initialDelaySeconds: 5
+            periodSeconds: 5  
           env:
             - name: SERVER_HOST
               valueFrom:
