@@ -20,16 +20,17 @@ Config is loaded purely from process environment variables via `os.Getenv` in `c
 
 | Variable | Default | Notes |
 |---|---|---|
-| `SERVER_HOST` | *localhost* | Bind address. `localhost` only accepts loopback connections — leave empty or use `0.0.0.0` so Docker's port mapping can reach it. |
+| `SERVER_HOST` | `0.0.0.0` | Bind address by using `0.0.0.0` so Docker's port mapping can reach it. |
 | `SERVER_PORT` | `8080` | |
-| `SERVER_READ_TIME` | `30s` | Parsed with `time.ParseDuration`; falls back to default on parse error. |
-| `SERVER_WRITE_TIME` | `2m` | Same fallback behavior. |
+| `SERVER_READ_TIMEOUT` | `30s` | Parsed with `time.ParseDuration`; falls back to default on parse error. |
+| `SERVER_WRITE_TIMEOUT` | `2m` | Same fallback behavior. |
 | `AGENT_NAME` | *(empty)* | Agent's name; also becomes the ADK runner's `AppName` via `targetAgent.Name()`. |
 | `BASE_URL` | *(empty)* | OpenAI-compatible base URL for the model provider (e.g. OpenRouter). |
 | `API_KEY` | *(empty)* | |
 | `MODEL_NAME` | *(empty)* | |
 | `SKILL_LOCATION` | *(empty)* | Filesystem path (relative to CWD) passed to `os.DirFS` to load skill definitions. |
 | `SKILL_NAME` | *(empty)* | Loaded into config but currently unused — only `Skill.Location` is read. |
+| `WAIT_TIMEOUT` | Wait for the response from the agent(e.g. `60s` ) | `60s` |
 
 ## Architecture
 
@@ -39,7 +40,7 @@ This is a Go service built on Google's Agent Development Kit (`google.golang.org
 2. **Skill tool** (`internal/infrastructure/util/llm.go: OfSkillBasedTool`) — builds an ADK `skilltoolset.SkillToolset` from `skill.NewFileSystemSource(os.DirFS(SKILL_LOCATION))`. Skills are Markdown files with YAML frontmatter; the only one currently defined is `skills/car-valuer/SKILL.md`, which instructs the model to respond with a strict JSON price range (brand/model/year/market/quoted_price/quoted_at) and nothing else.
 3. **LLM + Agent** (`internal/infrastructure/util/llm.go: OfAgent`) — always builds an `openaimodel.NewModel` (OpenAI-compatible client pointed at `BASE_URL`/`API_KEY`/`MODEL_NAME`; works against OpenRouter). There is no Gemini/provider-dispatch path. The model and skill toolset are wrapped into an `llmagent.New` with a fixed instruction constant (`agentInstruction` in `cmd/api/server.go`) that tells the agent to defer to the `car-valuer` skill instead of its own knowledge.
 4. **Runner** (`internal/infrastructure/util/llm.go: OfRunner`) — wires the agent to `runner.New` with in-memory session/memory services (`memory.InMemoryService()`, `session.InMemoryService()`) and `AutoCreateSession: true`. `AppName` comes from `targetAgent.Name()` (i.e. `AGENT_NAME`), not a separate parameter.
-5. **HTTP layer** (`internal/handler/handler.go`) — `RegisterRoutes()` mounts `POST /chat` and `GET /health` on a fresh `http.ServeMux`.
+5. **HTTP layer** (`internal/handler/handler.go`) — `RegisterRoutes()` mounts `POST /v1/valuations` and `GET /health` on a fresh `http.ServeMux`.
    - `askToAgent` decodes a `model.ChatRequest{sessionId, userId, message}` body via `sonic`, generates a session ID (`util.NewSessionId()`, a `uuid.New()`) when none is supplied, runs the agent via `runner.Run`, concatenates all non-thought text parts from the returned event stream, and writes the result back as **plain text** (not JSON) with a 200 status. A run-loop error is returned via `http.Error` with the raw error string — no generic `{"error": ...}` envelope.
    - `healthCheck` returns `model.HealthCheckResponse{status, checked_at}` as JSON.
    - There is currently no auth/authorization on `userId`/`sessionId` beyond what the request body provides.

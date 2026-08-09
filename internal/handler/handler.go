@@ -29,7 +29,7 @@ func New(agentRunner runner.Runner, waitTimeout time.Duration) Handler {
 
 func (h Handler) RegisterRoutes() *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /chat", h.askToAgent)
+	mux.HandleFunc("POST /v1/valuations", h.askToAgent)
 	mux.HandleFunc("GET /health", h.healthCheck)
 	return mux
 }

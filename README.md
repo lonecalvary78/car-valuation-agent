@@ -26,10 +26,10 @@ Config is loaded from environment variables:
 
 | Variable | Description | Default |
 |---|---|---|
-| `SERVER_HOST` | Address the HTTP server binds to | `localhost` or `0.0.0.0` |
+| `SERVER_HOST` | Address the HTTP server binds to | `0.0.0.0` |
 | `SERVER_PORT` | Port the HTTP server listens on | `8080` |
-| `SERVER_READ_TIME` | Request read timeout (e.g. `30s`) | `30s` |
-| `SERVER_WRITE_TIME` | Response write timeout (e.g. `2m`) | `2m` |
+| `SERVER_READ_TIMEOUT` | Request read timeout (e.g. `30s`) | `30s` |
+| `SERVER_WRITE_TIMEOUT` | Response write timeout (e.g. `2m`) | `2m` |
 | `AGENT_NAME` | Name registered with the ADK runner/session service | — |
 | `BASE_URL` | OpenAI-compatible base URL for the model provider (e.g. OpenRouter) | — |
 | `API_KEY` | API key for the model provider | — |
@@ -38,7 +38,7 @@ Config is loaded from environment variables:
 | `WAIT_TIMEOUT` | Wait for the response from the agent(e.g. `60s` ) | `60s` |
 
 
-> Binding `SERVER_HOST` to `localhost` only accepts connections from inside the container/host itself — leave it empty (or use `0.0.0.0`) if the server needs to be reachable through Docker's port mapping.
+> Binding `SERVER_HOST` to `0.0.0.0` to serve both local and docker exposed.
 
 ## Running locally
 
@@ -53,7 +53,7 @@ go vet ./...                 # Static analysis
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/chat` | Send `{"userId", "sessionId", "message"}`; returns the agent's reply with JSON format. `sessionId` is generated automatically if omitted. |
+| `POST` | `/v1/valuations` | Send `{"userId", "sessionId", "message"}`; returns the agent's reply with JSON format. `sessionId` is generated automatically if omitted. |
 | `GET` | `/health` | Returns `{"status", "checked_at"}`. |
 
 Example:
