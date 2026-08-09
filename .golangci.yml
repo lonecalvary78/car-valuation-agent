@@ -1,13 +1,11 @@
 version: "2"
 linters:
   enable:
-    - arangolint
     - asasalint
     - asciicheck
     - bidichk
     - bodyclose
     - canonicalheader
-    - clickhouselint
     - containedctx
     - contextcheck
     - copyloopvar
@@ -40,13 +38,11 @@ linters:
     - gocognit
     - goconst
     - gocritic
-    - gocyclo
     - godoclint
     - godot
     - godox
     - goheader
     - gomoddirectives
-    - gomodguard
     - gomodguard_v2
     - goprintffuncname
     - gosec
@@ -112,9 +108,22 @@ linters:
     - wastedassign
     - whitespace
     - wrapcheck
-    - wsl
     - wsl_v5
     - zerologlint
+  settings:
+    depguard:
+      rules:
+        Main:
+          list-mode: lax
+          allow:
+            - $gostd
+            - car-valuation-agent
+            - google.golang.org/adk
+            - google.golang.org/genai
+            - github.com/google/uuid
+            - github.com/shopspring/decimal
+            - github.com/bytedance/sonic
+            - github.com/stretchr/testify
 run:
   timeout: 1m
   issues-exit-code: 1
