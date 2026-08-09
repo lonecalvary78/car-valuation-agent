@@ -5,3 +5,6 @@
 ## Exclude all secret files
 .env
 **/secret
+
+## Test Results
+test-results*
