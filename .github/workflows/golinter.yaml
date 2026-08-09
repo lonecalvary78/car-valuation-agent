@@ -1,9 +1,13 @@
 name: golinter
 
-on:      
-  schedule:
-    - cron: '0 0 * *  3'
-      timezone: "Asia/Singapore"
+on:
+  push:
+    branches:
+      - master
+    paths-ignore: 
+      - ".claude/**"
+      - "README.md"
+      - "CLAUDE.md"
 jobs:
   golinter:
     strategy:
