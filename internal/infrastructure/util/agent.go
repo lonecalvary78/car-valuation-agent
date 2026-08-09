@@ -44,7 +44,7 @@ func withSimpleSetup(ctx context.Context, instruction string, agentConfig config
 	})
 }
 
-func withAdvanceSetup(ctx context.Context, instruction string, agentConfig config.Agent, modelConfig config.Model, advancedSetup config.AdvanceSetup, tools []tool.Toolset) (agent.Agent, error) {
+func withAdvanceSetup(ctx context.Context, instruction string, agentConfig config.Agent, modelConfig config.Model, advancedSetup config.AdvancedSetup, tools []tool.Toolset) (agent.Agent, error) {
 	llm, err := ofModel(ctx, modelConfig)
 	if err != nil {
 		return nil, err

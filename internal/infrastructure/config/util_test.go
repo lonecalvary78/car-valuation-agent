@@ -1,6 +1,7 @@
 package config
 
 import (
+	"car-valuation-agent/internal/apptest"
 	"os"
 	"testing"
 
@@ -8,8 +9,9 @@ import (
 )
 
 func TestLoad(t *testing.T) {
-	SetEnv(t)
-	appConfig := Load()
+	apptest.SetEnvForTesting(t)
+	appConfig, err := Load()
+	require.NoError(t, err)
 	require.Equal(t, os.Getenv("SERVER_HOST"), appConfig.GetServer().Host)
 	require.Equal(t, getEnvAsInt(os.Getenv("SERVER_PORT"), 8585), appConfig.GetServer().Port)
 	require.Equal(t, os.Getenv("AGENT_NAME"), appConfig.GetAgent().Name)
@@ -19,7 +21,7 @@ func TestLoad(t *testing.T) {
 	require.Equal(t, getEnvAsFloat(os.Getenv("TEMPERATURE"), 2.0), appConfig.GetAgent().GetModel().AdvanceSetup.Temperature)
 	require.Equal(t, getEnvAsFloat(os.Getenv("TOP_K"), 0.0), appConfig.GetAgent().GetModel().AdvanceSetup.TopK)
 	require.Equal(t, getEnvAsFloat(os.Getenv("TOP_P"), 0.0), appConfig.GetAgent().GetModel().AdvanceSetup.TopP)
-	require.Equal(t, getEnvAsFloat(os.Getenv("PRESENCE_PENALTY"), 0.0), appConfig.GetAgent().GetModel().AdvanceSetup.PresencePenalty)
-	require.Equal(t, getEnvAsFloat(os.Getenv("FREQUENCY_PENALTY"), 0.0), appConfig.GetAgent().GetModel().AdvanceSetup.FrequencyPenalty)
+	require.Equal(t, getEnvAsFloat(os.Getenv("PRESENCE_PENALTY"), 1.0), appConfig.GetAgent().GetModel().AdvanceSetup.PresencePenalty)
+	require.Equal(t, getEnvAsFloat(os.Getenv("FREQUENCY_PENALTY"), 1.0), appConfig.GetAgent().GetModel().AdvanceSetup.FrequencyPenalty)
 	require.Equal(t, os.Getenv("SKILL_LOCATION"), appConfig.GetAgent().GetSkill().Location)
 }

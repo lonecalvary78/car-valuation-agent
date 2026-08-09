@@ -25,9 +25,9 @@ const (
 
 func main() {
 	ctx := context.Background()
-	appConfig := config.Load()
-	if err := appConfig.Validate(); err != nil {
-		log.Fatalf("there are some error when it verify the application configuration[error: %v]", err.Error())
+	appConfig, err := config.Load()
+	if err != nil {
+		log.Fatalf("error: %v", err.Error())
 	}
 
 	skillBasedTool, err := util.OfSkillBasedTool(ctx, appConfig.GetAgent().GetSkill().Location)
@@ -46,7 +46,7 @@ func main() {
 		log.Fatalf("error: %v", err.Error())
 	}
 
-	handler := handler.New(*agentRunner)
+	handler := handler.New(*agentRunner, appConfig.GetWaitTimeout())
 	wrappedHandler := middleware.Chain(handler.RegisterRoutes(), middleware.Logging, middleware.Recovery)
 
 	agentServer := &http.Server{

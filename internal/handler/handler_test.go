@@ -9,6 +9,7 @@ import (
 	"iter"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -31,7 +32,7 @@ func newTestHandler(t *testing.T, run func(agent.InvocationContext) iter.Seq2[*s
 	agentRunner, err := util.OfRunner(fakeAgent, memory.InMemoryService(), session.InMemoryService(), true)
 	require.NoError(t, err)
 
-	return New(*agentRunner)
+	return New(*agentRunner, 6*time.Second)
 }
 
 func runOfSingleText(text string) func(agent.InvocationContext) iter.Seq2[*session.Event, error] {
@@ -111,7 +112,7 @@ func TestAskToAgent(t *testing.T) {
 
 		h.askToAgent(w, r)
 
-		require.Equal(t, 500, w.Code)
+		require.Equal(t, 400, w.Code)
 	})
 
 	t.Run("returns 500 when the runner yields an error", func(t *testing.T) {

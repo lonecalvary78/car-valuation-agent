@@ -3,11 +3,13 @@ package config
 import (
 	"car-valuation-agent/internal/infrastructure/validator"
 	"errors"
+	"time"
 )
 
 type AppConfig struct {
-	server Server
-	agent  Agent
+	server      Server
+	agent       Agent
+	waitTimeout time.Duration
 }
 
 func (config AppConfig) GetServer() Server {
@@ -16,6 +18,10 @@ func (config AppConfig) GetServer() Server {
 
 func (config AppConfig) GetAgent() Agent {
 	return config.agent
+}
+
+func (config AppConfig) GetWaitTimeout() time.Duration {
+	return config.waitTimeout
 }
 
 func (config AppConfig) Validate() error {
@@ -54,6 +60,10 @@ func (config AppConfig) Validate() error {
 	}
 
 	if validationError = validator.ValidateForRequiredOfString("Skill - Location", config.GetAgent().GetSkill().Location); validationError != nil {
+		validationErrors = append(validationErrors, validationError)
+	}
+
+	if validationError = validator.ValidateForRequiredOfDuration("Wait Timeout", config.GetWaitTimeout()); validationError != nil {
 		validationErrors = append(validationErrors, validationError)
 	}
 

@@ -1,6 +1,7 @@
 package util
 
 import (
+	"car-valuation-agent/internal/apptest"
 	"car-valuation-agent/internal/infrastructure/config"
 	"context"
 	"testing"
@@ -33,20 +34,14 @@ func (mockedTool *AgentToolMock) Tools(ctx agent.ReadonlyContext) ([]tool.Tool, 
 	return tools, args.Error(1)
 }
 
-func setEnvForTesting(t *testing.T, targetModel string) config.AppConfig {
-	t.Helper()
-	t.Setenv("AGENT_NAME", "car-valuer-agent")
-	t.Setenv("MODEL_NAME", targetModel)
-	t.Setenv("BASE_URL", "http:localhost:8000")
-	t.Setenv("API_KEY", "apiKey")
-	return config.Load()
-}
 
 func TestOfAgent(t *testing.T) {
 	mockTools := new(AgentToolMock)
-	appConfig := setEnvForTesting(t, "mdoel-123")
-
+	apptest.SetEnvForTesting(t)
+	appConfig, err := config.Load()
+	require.NoError(t,err)
+	require.NoError(t, err)
 	createdAgent, err := OfAgent(context.Background(), "Do something", appConfig, []tool.Toolset{mockTools})
 	require.NoError(t, err)
-	require.Equal(t, "car-valuer-agent", createdAgent.Name())
+	require.Equal(t, "car-valuation-agent", createdAgent.Name())
 }

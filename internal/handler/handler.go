@@ -17,11 +17,13 @@ import (
 
 type Handler struct {
 	activeAgentRunner *runner.Runner
+	waitTimeout       time.Duration
 }
 
-func New(agentRunner runner.Runner) Handler {
+func New(agentRunner runner.Runner, waitTimeout time.Duration) Handler {
 	return Handler{
 		activeAgentRunner: &agentRunner,
+		waitTimeout:       waitTimeout,
 	}
 }
 
@@ -33,19 +35,20 @@ func (h Handler) RegisterRoutes() *http.ServeMux {
 }
 
 func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
-	requestBody, err := io.ReadAll(r.Body)
+	r.Body = http.MaxBytesReader(w, r.Body, 32<<10)
+	bodyContents, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	var chatRequest model.ChatRequest
-	if err := chatRequest.FromJSON(requestBody); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := chatRequest.FromJSON(bodyContents); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if r.Header.Get("X-USER-ID") != "" {
-		userId, err := uuid.Parse(r.Header.Get("x-user-id"))
+		userId, err := uuid.Parse(r.Header.Get("X-USER-ID"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -63,7 +66,7 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(r.Context(), h.waitTimeout)
 	defer cancel()
 
 	content := genai.NewContentFromText(chatRequest.Message, genai.RoleUser)

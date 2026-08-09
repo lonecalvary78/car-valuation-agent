@@ -10,10 +10,10 @@ type Model struct {
 	BaseUrl      string
 	ApiKey       string
 	ModelName    string
-	AdvanceSetup AdvanceSetup
+	AdvanceSetup AdvancedSetup
 }
 
-type AdvanceSetup struct {
+type AdvancedSetup struct {
 	Temperature      float32
 	TopP             float32
 	TopK             float32
@@ -22,7 +22,7 @@ type AdvanceSetup struct {
 	MaximumTokens    int32
 }
 
-func (advancedSetup AdvanceSetup) HasAdvancedSetup() bool {
+func (advancedSetup AdvancedSetup) HasAdvancedSetup() bool {
 	return advancedSetup.Temperature > 0.0 &&
 		advancedSetup.TopK > 0.0 &&
 		advancedSetup.TopP > 0.0 &&
