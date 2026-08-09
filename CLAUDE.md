@@ -20,7 +20,7 @@ Config is loaded purely from process environment variables via `os.Getenv` in `c
 
 | Variable | Default | Notes |
 |---|---|---|
-| `SERVER_HOST` | *(empty)* | Bind address. `localhost` only accepts loopback connections — leave empty or use `0.0.0.0` so Docker's port mapping can reach it. |
+| `SERVER_HOST` | *localhost* | Bind address. `localhost` only accepts loopback connections — leave empty or use `0.0.0.0` so Docker's port mapping can reach it. |
 | `SERVER_PORT` | `8080` | |
 | `SERVER_READ_TIME` | `30s` | Parsed with `time.ParseDuration`; falls back to default on parse error. |
 | `SERVER_WRITE_TIME` | `2m` | Same fallback behavior. |
