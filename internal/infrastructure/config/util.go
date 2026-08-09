@@ -13,7 +13,7 @@ func Load() (AppConfig, error) {
 	}
 	appConfig := AppConfig{
 		server: Server{
-			Host:         os.Getenv("SERVER_HOST"),
+			Host:         getEnv("SERVER_HOST", "0.0.0.0"),
 			Port:         getEnvAsInt(os.Getenv("SERVER_PORT"), 8080),
 			ReadTimeout:  readTimeOut,
 			WriteTimeout: writeTimeout,
@@ -30,7 +30,7 @@ func Load() (AppConfig, error) {
 					TopK:             getEnvAsFloat(os.Getenv("TOP_K"), 0.0),
 					PresencePenalty:  getEnvAsFloat(os.Getenv("PRESENCE_PENALTY"), 0.0),
 					FrequencyPenalty: getEnvAsFloat(os.Getenv("FREQUENCY_PENALTY"), 0.0),
-					MaximumTokens:    int32(getEnvAsInt(os.Getenv("MAX_TOKENS"), 0)),
+					MaximumTokens:    int32(getEnvAsInt(os.Getenv("MAXIMUM_TOKENS"), 0)),
 				},
 			},
 			skill: Skill{
@@ -62,6 +62,14 @@ func loadAllTimeouts() (time.Duration, time.Duration, time.Duration, error) {
 	}
 
 	return readTimeout, writeTimeout, waitTimeout, nil
+}
+
+func getEnv(envVariableName string, defaultValue string) string {
+	envVariableValue := os.Getenv(envVariableName)
+	if envVariableValue == "" {
+		return defaultValue
+	}
+	return envVariableValue
 }
 
 func getEnvAsInt(envVariableValue string, defaultValue int) int {

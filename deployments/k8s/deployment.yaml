@@ -110,6 +110,12 @@ spec:
                 configMapKeyRef:
                   name: car-valuation-ai-config
                   key: PRESENCE_PENALTY
+            - name: MAXIMUM_TOKENS
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: MAXIMUM_TOKENS
+
             - name: WAIT_TIMEOUT
               valueFrom:
                 configMapKeyRef:
