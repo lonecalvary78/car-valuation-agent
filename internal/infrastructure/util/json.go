@@ -16,10 +16,10 @@ func ToJSON(dto any) ([]byte, error) {
 }
 
 func ExtractJSONObject(s string) string {
-      start := strings.Index(s, "{")
-      end := strings.LastIndex(s, "}")
-      if start < 0 || end < start {
-              return s
-      }
-      return s[start : end+1]
+	start := strings.Index(s, "{")
+	end := strings.LastIndex(s, "}")
+	if start < 0 || end < start {
+		return s
+	}
+	return s[start : end+1]
 }

@@ -34,12 +34,11 @@ func (mockedTool *AgentToolMock) Tools(ctx agent.ReadonlyContext) ([]tool.Tool, 
 	return tools, args.Error(1)
 }
 
-
 func TestOfAgent(t *testing.T) {
 	mockTools := new(AgentToolMock)
 	apptest.SetEnvForTesting(t)
 	appConfig, err := config.Load()
-	require.NoError(t,err)
+	require.NoError(t, err)
 	require.NoError(t, err)
 	createdAgent, err := OfAgent(context.Background(), "Do something", appConfig, []tool.Toolset{mockTools})
 	require.NoError(t, err)
