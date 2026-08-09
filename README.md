@@ -26,7 +26,7 @@ Config is loaded from environment variables, picked up automatically from a `.en
 
 | Variable | Description | Default |
 |---|---|---|
-| `SERVER_HOST` | Address the HTTP server binds to | (empty) |
+| `SERVER_HOST` | Address the HTTP server binds to | `localhost` |
 | `SERVER_PORT` | Port the HTTP server listens on | `8080` |
 | `SERVER_READ_TIME` | Request read timeout (e.g. `30s`) | `30s` |
 | `SERVER_WRITE_TIME` | Response write timeout (e.g. `2m`) | `2m` |
@@ -35,6 +35,8 @@ Config is loaded from environment variables, picked up automatically from a `.en
 | `API_KEY` | API key for the model provider | — |
 | `MODEL_NAME` | Model identifier passed to the provider | — |
 | `SKILL_LOCATION` | Filesystem path containing skill definitions | — |
+| `WAIT_TIMEOUT` | Wait for the response from the agent(e.g. `60s` ) | `60s` |
+
 
 > Binding `SERVER_HOST` to `localhost` only accepts connections from inside the container/host itself — leave it empty (or use `0.0.0.0`) if the server needs to be reachable through Docker's port mapping.
 
