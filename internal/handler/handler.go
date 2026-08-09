@@ -88,7 +88,7 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var carValuationResponse model.CarValuationResponse
-	if err := util.FromJSON(agentResponse, &carValuationResponse); err != nil {
+	if err := util.FromJSON(util.ExtractJSONObject(agentResponse), &carValuationResponse); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
