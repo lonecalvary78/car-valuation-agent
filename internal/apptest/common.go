@@ -17,7 +17,7 @@ func SetEnvForTesting(t *testing.T) {
 	t.Setenv("TOP_P", "0.95")
 	t.Setenv("PRESENCE_PENALTY", "1.0")
 	t.Setenv("FREQUENCY_PENALTY", "1.0")
-	t.Setenv("MAX_TOKENS", "2048")
+	t.Setenv("MAXIMUM_TOKENS", "2048")
 	t.Setenv("SKILL_LOCATION", "skills")
 	t.Setenv("WAIT_TIMEOUT", "60s")
 
