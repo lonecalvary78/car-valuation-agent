@@ -22,7 +22,7 @@ The agent is instructed to answer using a `car-valuer` skill (see [skills/car-va
 
 ## Configuration
 
-Config is loaded from environment variables, picked up automatically from a `.env` file in the working directory:
+Config is loaded from environment variables:
 
 | Variable | Description | Default |
 |---|---|---|
