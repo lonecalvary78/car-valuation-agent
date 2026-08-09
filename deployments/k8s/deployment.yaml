@@ -40,6 +40,26 @@ spec:
               initialDelaySeconds: 5
               periodSeconds: 5  
           env:
+            - name: SERVER_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: SERVER_HOST
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: SERVER_PORT
+            - name: SERVER_READ_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: SERVER_READ_TIMEOUT
+            - name: SERVER_WRITE_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: SERVER_WRITE_TIMEOUT
             - name: BASE_URL
               valueFrom:
                 configMapKeyRef:
@@ -90,3 +110,8 @@ spec:
                 configMapKeyRef:
                   name: car-valuation-ai-config
                   key: PRESENCE_PENALTY
+            - name: WAIT_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: car-valuation-ai-config
+                  key: WAIT_TIMEOUT
