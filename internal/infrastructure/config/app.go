@@ -9,6 +9,9 @@ import (
 type AppConfig struct {
 	server      Server
 	agent       Agent
+	keycloak    Keycloak
+	redis       Redis
+	rateLimit   RateLimit
 	waitTimeout time.Duration
 }
 
@@ -18,6 +21,18 @@ func (config AppConfig) GetServer() Server {
 
 func (config AppConfig) GetAgent() Agent {
 	return config.agent
+}
+
+func (config AppConfig) GetKeycloak() Keycloak {
+	return config.keycloak
+}
+
+func (config AppConfig) GetRedis() Redis {
+	return config.redis
+}
+
+func (config AppConfig) GetRateLimit() RateLimit {
+	return config.rateLimit
 }
 
 func (config AppConfig) GetWaitTimeout() time.Duration {
@@ -63,7 +78,34 @@ func (config AppConfig) Validate() error {
 		validationErrors = append(validationErrors, validationError)
 	}
 
+	//Keycloak Config
+	if validationError = validator.ValidateForRequiredOfString("Keycloak - BaseUrl", config.GetKeycloak().BaseUrl); validationError != nil {
+		validationErrors = append(validationErrors, validationError)
+	}
+
+	if validationError = validator.ValidateForRequiredOfString("Keycloak - Realm", config.GetKeycloak().Realm); validationError != nil {
+		validationErrors = append(validationErrors, validationError)
+	}
+
+	if validationError = validator.ValidateForRequiredOfString("Keycloak - ClientId", config.GetKeycloak().ClientId); validationError != nil {
+		validationErrors = append(validationErrors, validationError)
+	}
+
 	if validationError = validator.ValidateForRequiredOfDuration("Wait Timeout", config.GetWaitTimeout()); validationError != nil {
+		validationErrors = append(validationErrors, validationError)
+	}
+
+	//Redis Config
+	if validationError = validator.ValidateForRequiredOfString("Redis - Addr", config.GetRedis().Addr); validationError != nil {
+		validationErrors = append(validationErrors, validationError)
+	}
+
+	//RateLimit Config
+	if validationError = validator.ValidateForRequiredOfNumeric("RateLimit - Limit", config.GetRateLimit().Limit); validationError != nil {
+		validationErrors = append(validationErrors, validationError)
+	}
+
+	if validationError = validator.ValidateForRequiredOfDuration("RateLimit - Window", config.GetRateLimit().Window); validationError != nil {
 		validationErrors = append(validationErrors, validationError)
 	}
 

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"car-valuation-agent/internal/infrastructure/middleware"
 	"car-valuation-agent/internal/infrastructure/util"
 	"car-valuation-agent/internal/model"
 	"context"
@@ -27,9 +28,9 @@ func New(agentRunner runner.Runner, waitTimeout time.Duration) Handler {
 	}
 }
 
-func (h Handler) RegisterRoutes() *http.ServeMux {
+func (h Handler) RegisterRoutes(authMiddleware middleware.Middleware) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /v1/valuations", h.askToAgent)
+	mux.Handle("POST /v1/valuations", authMiddleware(http.HandlerFunc(h.askToAgent)))
 	mux.HandleFunc("GET /health", h.healthCheck)
 	return mux
 }
@@ -47,8 +48,8 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("X-USER-ID") != "" {
-		userId, err := uuid.Parse(r.Header.Get("X-USER-ID"))
+	if r.Header.Get("X-User-Id") != "" {
+		userId, err := uuid.Parse(r.Header.Get("X-User-Id"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

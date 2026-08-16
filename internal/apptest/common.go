@@ -20,5 +20,13 @@ func SetEnvForTesting(t *testing.T) {
 	t.Setenv("MAXIMUM_TOKENS", "2048")
 	t.Setenv("SKILL_LOCATION", "skills")
 	t.Setenv("WAIT_TIMEOUT", "60s")
+	t.Setenv("KEYCLOAK_BASE_URL", "http://localhost:8180")
+	t.Setenv("KEYCLOAK_REALM", "car-valuation-agent")
+	t.Setenv("KEYCLOAK_CLIENT_ID", "car-valuation-agent")
+	t.Setenv("REDIS_ADDR", "localhost:6379")
+	t.Setenv("REDIS_PASSWORD", "")
+	t.Setenv("REDIS_DB", "0")
+	t.Setenv("RATE_LIMIT_REQUESTS", "60")
+	t.Setenv("RATE_LIMIT_WINDOW", "1m")
 
 }

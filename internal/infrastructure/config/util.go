@@ -11,6 +11,11 @@ func Load() (AppConfig, error) {
 	if err != nil {
 		return AppConfig{}, err
 	}
+
+	rateLimitWindow, err := getEnvAsDuration(os.Getenv("RATE_LIMIT_WINDOW"), 1*time.Minute)
+	if err != nil {
+		return AppConfig{}, err
+	}
 	appConfig := AppConfig{
 		server: Server{
 			Host:         getEnv("SERVER_HOST", "0.0.0.0"),
@@ -36,6 +41,20 @@ func Load() (AppConfig, error) {
 			skill: Skill{
 				Location: os.Getenv("SKILL_LOCATION"),
 			},
+		},
+		keycloak: Keycloak{
+			BaseUrl:  os.Getenv("KEYCLOAK_BASE_URL"),
+			Realm:    os.Getenv("KEYCLOAK_REALM"),
+			ClientId: os.Getenv("KEYCLOAK_CLIENT_ID"),
+		},
+		redis: Redis{
+			Addr:     getEnv("REDIS_ADDR", "localhost:6379"),
+			Password: os.Getenv("REDIS_PASSWORD"),
+			DB:       getEnvAsInt(os.Getenv("REDIS_DB"), 0),
+		},
+		rateLimit: RateLimit{
+			Limit:  getEnvAsInt(os.Getenv("RATE_LIMIT_REQUESTS"), 60),
+			Window: rateLimitWindow,
 		},
 		waitTimeout: waitTimeout,
 	}

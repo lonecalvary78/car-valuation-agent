@@ -3,6 +3,9 @@ package main
 import (
 	"car-valuation-agent/internal/handler"
 	"car-valuation-agent/internal/infrastructure/config"
+	"car-valuation-agent/internal/infrastructure/external/keycloak"
+	"car-valuation-agent/internal/infrastructure/external/memoryservice"
+	"car-valuation-agent/internal/infrastructure/external/redisclient"
 	"car-valuation-agent/internal/infrastructure/middleware"
 	"car-valuation-agent/internal/infrastructure/util"
 	"context"
@@ -14,7 +17,6 @@ import (
 	"syscall"
 	"time"
 
-	"google.golang.org/adk/v2/memory"
 	"google.golang.org/adk/v2/session"
 	"google.golang.org/adk/v2/tool"
 )
@@ -41,13 +43,32 @@ func main() {
 		log.Fatalf("error: %v", err.Error())
 	}
 
-	agentRunner, err := util.OfRunner(carValuerAgent, memory.InMemoryService(), session.InMemoryService(), true)
+	memoryservice, err := memoryservice.OfExternalMemoryService(ctx, "", appConfig.GetAgent().GetModel())
 	if err != nil {
 		log.Fatalf("error: %v", err.Error())
 	}
 
+	agentRunner, err := util.OfRunner(carValuerAgent, memoryservice, session.InMemoryService(), true)
+	if err != nil {
+		log.Fatalf("error: %v", err.Error())
+	}
+
+	keycloakClient, err := keycloak.NewClient(ctx, appConfig.GetKeycloak().BaseUrl, appConfig.GetKeycloak().Realm, appConfig.GetKeycloak().ClientId)
+	if err != nil {
+		log.Fatalf("error: %v", err.Error())
+	}
+
+	redisClient, err := redisclient.NewClient(ctx, appConfig.GetRedis().Addr, appConfig.GetRedis().Password, appConfig.GetRedis().DB)
+	if err != nil {
+		log.Fatalf("error: %v", err.Error())
+	}
+	defer redisClient.Close()
+
+	rateLimitMiddleware := middleware.RateLimit(redisClient, appConfig.GetRateLimit().Limit, appConfig.GetRateLimit().Window)
+
 	handler := handler.New(*agentRunner, appConfig.GetWaitTimeout())
-	wrappedHandler := middleware.Chain(handler.RegisterRoutes(), middleware.Logging, middleware.Recovery)
+	protectedRoutes := middleware.Combine(middleware.Auth(keycloakClient), rateLimitMiddleware)
+	wrappedHandler := middleware.Chain(handler.RegisterRoutes(protectedRoutes), middleware.Logging, middleware.Recovery)
 
 	agentServer := &http.Server{
 		Addr:         appConfig.GetServer().GetAddr(),

@@ -4,6 +4,7 @@ import (
 	"car-valuation-agent/internal/apptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -24,4 +25,14 @@ func TestLoad(t *testing.T) {
 	require.Equal(t, getEnvAsFloat(os.Getenv("PRESENCE_PENALTY"), 1.0), appConfig.GetAgent().GetModel().AdvanceSetup.PresencePenalty)
 	require.Equal(t, getEnvAsFloat(os.Getenv("FREQUENCY_PENALTY"), 1.0), appConfig.GetAgent().GetModel().AdvanceSetup.FrequencyPenalty)
 	require.Equal(t, os.Getenv("SKILL_LOCATION"), appConfig.GetAgent().GetSkill().Location)
+	require.Equal(t, os.Getenv("KEYCLOAK_BASE_URL"), appConfig.GetKeycloak().BaseUrl)
+	require.Equal(t, os.Getenv("KEYCLOAK_REALM"), appConfig.GetKeycloak().Realm)
+	require.Equal(t, os.Getenv("KEYCLOAK_CLIENT_ID"), appConfig.GetKeycloak().ClientId)
+	require.Equal(t, os.Getenv("REDIS_ADDR"), appConfig.GetRedis().Addr)
+	require.Equal(t, os.Getenv("REDIS_PASSWORD"), appConfig.GetRedis().Password)
+	require.Equal(t, getEnvAsInt(os.Getenv("REDIS_DB"), -1), appConfig.GetRedis().DB)
+	require.Equal(t, getEnvAsInt(os.Getenv("RATE_LIMIT_REQUESTS"), -1), appConfig.GetRateLimit().Limit)
+	expectedRateLimitWindow, err := time.ParseDuration(os.Getenv("RATE_LIMIT_WINDOW"))
+	require.NoError(t, err)
+	require.Equal(t, expectedRateLimitWindow, appConfig.GetRateLimit().Window)
 }
