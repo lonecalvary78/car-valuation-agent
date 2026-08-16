@@ -1,4 +1,7 @@
 # Car Valuation Agent
+[![golinter](https://github.com/lonecalvary78/car-valuation-agent/actions/workflows/golinter.yaml/badge.svg)](https://github.com/lonecalvary78/car-valuation-agent/actions/workflows/golinter.yaml)
+
+[![unit-tests](https://github.com/lonecalvary78/car-valuation-agent/actions/workflows/unit-tests.yaml/badge.svg)](https://github.com/lonecalvary78/car-valuation-agent/actions/workflows/unit-tests.yaml)
 
 [![car-valuer-agent-ci](https://github.com/lonecalvary78/car-valuation-agent/actions/workflows/ci.yaml/badge.svg)](https://github.com/lonecalvary78/car-valuation-agent/actions/workflows/ci.yaml)
 
