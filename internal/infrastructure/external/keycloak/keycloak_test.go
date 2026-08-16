@@ -3,9 +3,13 @@ package keycloak
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -21,11 +25,13 @@ const (
 	adminClientId = "admin-cli"
 )
 
+var errTokenRequestFailed = errors.New("keycloak: token request failed")
+
 func TestVerifyToken(t *testing.T) {
 	ctx := context.Background()
 	keycloakContainer, err := createKeycloakContainer(ctx)
 	require.NoError(t, err)
-	defer keycloakContainer.Terminate(ctx)
+	defer func() { require.NoError(t, keycloakContainer.Terminate(ctx)) }()
 
 	baseUrl, err := keycloakBaseUrl(ctx, keycloakContainer)
 	require.NoError(t, err)
@@ -33,7 +39,7 @@ func TestVerifyToken(t *testing.T) {
 	client, err := NewClient(ctx, baseUrl, adminRealm, adminClientId)
 	require.NoError(t, err)
 
-	idToken, err := fetchAdminIdToken(baseUrl)
+	idToken, err := fetchAdminIdToken(ctx, baseUrl)
 	require.NoError(t, err)
 
 	claims, err := client.VerifyToken(ctx, idToken)
@@ -46,7 +52,7 @@ func TestVerifyToken_InvalidToken(t *testing.T) {
 	ctx := context.Background()
 	keycloakContainer, err := createKeycloakContainer(ctx)
 	require.NoError(t, err)
-	defer keycloakContainer.Terminate(ctx)
+	defer func() { require.NoError(t, keycloakContainer.Terminate(ctx)) }()
 
 	baseUrl, err := keycloakBaseUrl(ctx, keycloakContainer)
 	require.NoError(t, err)
@@ -59,7 +65,7 @@ func TestVerifyToken_InvalidToken(t *testing.T) {
 }
 
 func createKeycloakContainer(ctx context.Context) (*testcontainers.DockerContainer, error) {
-	return testcontainers.Run(ctx, "quay.io/keycloak/keycloak:26.7",
+	container, err := testcontainers.Run(ctx, "quay.io/keycloak/keycloak:26.7",
 		testcontainers.WithEnv(map[string]string{
 			"KEYCLOAK_ADMIN":          adminUsername,
 			"KEYCLOAK_ADMIN_PASSWORD": adminPassword,
@@ -72,20 +78,25 @@ func createKeycloakContainer(ctx context.Context) (*testcontainers.DockerContain
 				WithStartupTimeout(2*time.Minute),
 		),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("keycloak_test: failed to start container: %w", err)
+	}
+
+	return container, nil
 }
 
 func keycloakBaseUrl(ctx context.Context, keycloakContainer *testcontainers.DockerContainer) (string, error) {
 	host, err := keycloakContainer.Host(ctx)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("keycloak_test: failed to get container host: %w", err)
 	}
 
 	mappedPort, err := keycloakContainer.MappedPort(ctx, "8080/tcp")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("keycloak_test: failed to get mapped port: %w", err)
 	}
 
-	return fmt.Sprintf("http://%s:%s", host, mappedPort.Port()), nil
+	return "http://" + net.JoinHostPort(host, mappedPort.Port()), nil
 }
 
 // fetchAdminIdToken authenticates against the realm's built-in admin-cli client
@@ -94,7 +105,7 @@ func keycloakBaseUrl(ctx context.Context, keycloakContainer *testcontainers.Dock
 // "openid" scope and returns the id_token, since that is what carries the "sub"
 // and "preferred_username" claims that Client.VerifyToken (an ID token verifier)
 // expects to parse.
-func fetchAdminIdToken(baseUrl string) (string, error) {
+func fetchAdminIdToken(ctx context.Context, baseUrl string) (string, error) {
 	form := url.Values{
 		"grant_type": {"password"},
 		"client_id":  {adminClientId},
@@ -103,21 +114,34 @@ func fetchAdminIdToken(baseUrl string) (string, error) {
 		"scope":      {"openid"},
 	}
 
-	response, err := http.PostForm(baseUrl+"/realms/"+adminRealm+"/protocol/openid-connect/token", form)
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		baseUrl+"/realms/"+adminRealm+"/protocol/openid-connect/token", strings.NewReader(form.Encode()))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("keycloak_test: failed to build token request: %w", err)
 	}
-	defer response.Body.Close()
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return "", fmt.Errorf("keycloak_test: failed to send token request: %w", err)
+	}
+	defer func() {
+		closeErr := response.Body.Close()
+		if closeErr != nil {
+			log.Printf("keycloak_test: failed to close response body: %v", closeErr)
+		}
+	}()
 
 	if response.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("keycloak: token request failed with status %d", response.StatusCode)
+		return "", fmt.Errorf("%w: status %d", errTokenRequestFailed, response.StatusCode)
 	}
 
 	var tokenResponse struct {
 		IdToken string `json:"id_token"`
 	}
-	if err := json.NewDecoder(response.Body).Decode(&tokenResponse); err != nil {
-		return "", err
+	err = json.NewDecoder(response.Body).Decode(&tokenResponse)
+	if err != nil {
+		return "", fmt.Errorf("keycloak_test: failed to decode token response: %w", err)
 	}
 
 	return tokenResponse.IdToken, nil

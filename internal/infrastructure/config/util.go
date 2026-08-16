@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -35,7 +37,7 @@ func Load() (AppConfig, error) {
 					TopK:             getEnvAsFloat(os.Getenv("TOP_K"), 0.0),
 					PresencePenalty:  getEnvAsFloat(os.Getenv("PRESENCE_PENALTY"), 0.0),
 					FrequencyPenalty: getEnvAsFloat(os.Getenv("FREQUENCY_PENALTY"), 0.0),
-					MaximumTokens:    int32(getEnvAsInt(os.Getenv("MAXIMUM_TOKENS"), 0)),
+					MaximumTokens:    clampToInt32(getEnvAsInt(os.Getenv("MAXIMUM_TOKENS"), 0)),
 				},
 			},
 			skill: Skill{
@@ -58,7 +60,8 @@ func Load() (AppConfig, error) {
 		},
 		waitTimeout: waitTimeout,
 	}
-	if err := appConfig.Validate(); err != nil {
+	err = appConfig.Validate()
+	if err != nil {
 		return AppConfig{}, err
 	}
 	return appConfig, nil
@@ -91,6 +94,17 @@ func getEnv(envVariableName string, defaultValue string) string {
 	return envVariableValue
 }
 
+func clampToInt32(value int) int32 {
+	switch {
+	case value > math.MaxInt32:
+		return math.MaxInt32
+	case value < math.MinInt32:
+		return math.MinInt32
+	default:
+		return int32(value)
+	}
+}
+
 func getEnvAsInt(envVariableValue string, defaultValue int) int {
 	convertedEnvVariableValue, err := strconv.Atoi(envVariableValue)
 	if err != nil {
@@ -114,7 +128,7 @@ func getEnvAsDuration(envVariableValue string, defaultValue time.Duration) (time
 
 	convertedValue, err := time.ParseDuration(envVariableValue)
 	if err != nil {
-		return 0 * time.Second, err
+		return 0 * time.Second, fmt.Errorf("config: failed to parse duration %q: %w", envVariableValue, err)
 	} else if convertedValue < 0*time.Second {
 		return defaultValue, nil
 	}

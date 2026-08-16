@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -17,5 +18,8 @@ func WriteJSON(w http.ResponseWriter, dto any, responseStatus int) error {
 	w.Header().Set(contentTypeKey, jsonMediaType)
 	w.WriteHeader(responseStatus)
 	_, err = w.Write(bytes)
-	return err
+	if err != nil {
+		return fmt.Errorf("util: failed to write response: %w", err)
+	}
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"car-valuation-agent/internal/apptest"
 	"car-valuation-agent/internal/infrastructure/config"
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
@@ -31,7 +32,13 @@ func (mockedTool *AgentToolMock) IsLongRunning() bool {
 func (mockedTool *AgentToolMock) Tools(ctx agent.ReadonlyContext) ([]tool.Tool, error) {
 	args := mockedTool.Called(ctx)
 	tools, _ := args.Get(0).([]tool.Tool)
-	return tools, args.Error(1)
+
+	err := args.Error(1)
+	if err != nil {
+		return nil, fmt.Errorf("agent_test: mocked tools call failed: %w", err)
+	}
+
+	return tools, nil
 }
 
 func TestOfAgent(t *testing.T) {

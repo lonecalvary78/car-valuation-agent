@@ -8,6 +8,7 @@ import (
 
 type responseWriter struct {
 	http.ResponseWriter
+
 	statusCode  int
 	wroteHeader bool
 }
@@ -32,10 +33,11 @@ func Logging(next http.Handler) http.Handler {
 
 		next.ServeHTTP(wrapped, r)
 
-		log.Printf("%d %s %s %v",
+		//nolint:gosec // method/URI are sanitized by sanitizeForLog to strip CR/LF before logging
+		log.Printf("%d %q %q %v",
 			wrapped.statusCode,
-			r.Method,
-			r.RequestURI,
+			sanitizeForLog(r.Method),
+			sanitizeForLog(r.RequestURI),
 			time.Since(start),
 		)
 	})

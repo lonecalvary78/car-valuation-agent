@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -23,12 +24,9 @@ func RateLimit(client *redis.Client, limit int, window time.Duration) Middleware
 				return
 			}
 
-			remaining := limit - int(count)
-			if remaining < 0 {
-				remaining = 0
-			}
-			w.Header().Set("X-RateLimit-Limit", strconv.Itoa(limit))
-			w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(remaining))
+			remaining := max(limit-int(count), 0)
+			w.Header().Set("X-Ratelimit-Limit", strconv.Itoa(limit))
+			w.Header().Set("X-Ratelimit-Remaining", strconv.Itoa(remaining))
 
 			if count > int64(limit) {
 				w.Header().Set("Retry-After", strconv.Itoa(int(ttl.Seconds())))
@@ -45,8 +43,9 @@ func incrementCounter(ctx context.Context, client *redis.Client, key string, win
 	pipe := client.TxPipeline()
 	incrCmd := pipe.Incr(ctx, key)
 	pipe.ExpireNX(ctx, key, window)
-	if _, err := pipe.Exec(ctx); err != nil {
-		return 0, 0, err
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		return 0, 0, fmt.Errorf("ratelimit: failed to increment counter for %s: %w", key, err)
 	}
 
 	ttl, err := client.TTL(ctx, key).Result()

@@ -14,7 +14,8 @@ func NewClient(ctx context.Context, addr string, password string, db int) (*redi
 		DB:       db,
 	})
 
-	if err := client.Ping(ctx).Err(); err != nil {
+	err := client.Ping(ctx).Err()
+	if err != nil {
 		return nil, fmt.Errorf("redis: failed to connect to %s: %w", addr, err)
 	}
 

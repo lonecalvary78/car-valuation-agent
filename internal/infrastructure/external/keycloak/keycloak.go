@@ -49,7 +49,8 @@ func (client *Client) VerifyToken(ctx context.Context, rawToken string) (Claims,
 	}
 
 	var claims Claims
-	if err := idToken.Claims(&claims); err != nil {
+	err = idToken.Claims(&claims)
+	if err != nil {
 		return Claims{}, fmt.Errorf("keycloak: failed to parse claims: %w", err)
 	}
 

@@ -3,6 +3,7 @@ package util
 import (
 	"car-valuation-agent/internal/infrastructure/validator"
 	"context"
+	"fmt"
 	"os"
 
 	"google.golang.org/adk/v2/tool"
@@ -12,16 +13,28 @@ import (
 )
 
 func OfSkillBasedTool(ctx context.Context, location string) (*skilltoolset.SkillToolset, error) {
-	if err := validator.ValidateForRequiredOfString("Skill Location", location); err != nil {
-		return nil, err
+	err := validator.ValidateForRequiredOfString("Skill Location", location)
+	if err != nil {
+		return nil, fmt.Errorf("util: invalid skill location: %w", err)
 	}
-	return skilltoolset.New(ctx, skilltoolset.Config{
+
+	skillToolset, err := skilltoolset.New(ctx, skilltoolset.Config{
 		Source: skill.NewFileSystemSource(os.DirFS(location)),
 	})
+	if err != nil {
+		return nil, fmt.Errorf("util: failed to create skill toolset: %w", err)
+	}
+
+	return skillToolset, nil
 }
 
 func OfFunctionalTool[TArgs, TResults any](toolName string, calledFunction functiontool.Func[TArgs, TResults]) (tool.Tool, error) {
-	return functiontool.New(functiontool.Config{
+	createdTool, err := functiontool.New(functiontool.Config{
 		Name: toolName,
 	}, calledFunction)
+	if err != nil {
+		return nil, fmt.Errorf("util: failed to create functional tool: %w", err)
+	}
+
+	return createdTool, nil
 }

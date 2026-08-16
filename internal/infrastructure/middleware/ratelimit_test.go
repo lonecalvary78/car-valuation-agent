@@ -21,7 +21,7 @@ func TestRateLimit_AllowsUnderLimit(t *testing.T) {
 	handler := RateLimit(client, 2, time.Minute)(okHandler())
 
 	for range 2 {
-		recorder := performRequest(handler, "203.0.113.10:1234")
+		recorder := performRequest(t, handler, "203.0.113.10:1234")
 		require.Equal(t, http.StatusOK, recorder.Code)
 	}
 }
@@ -34,11 +34,11 @@ func TestRateLimit_RejectsOverLimit(t *testing.T) {
 	handler := RateLimit(client, 2, time.Minute)(okHandler())
 
 	for range 2 {
-		recorder := performRequest(handler, "203.0.113.20:1234")
+		recorder := performRequest(t, handler, "203.0.113.20:1234")
 		require.Equal(t, http.StatusOK, recorder.Code)
 	}
 
-	recorder := performRequest(handler, "203.0.113.20:1234")
+	recorder := performRequest(t, handler, "203.0.113.20:1234")
 	require.Equal(t, http.StatusTooManyRequests, recorder.Code)
 	require.NotEmpty(t, recorder.Header().Get("Retry-After"))
 }
@@ -50,9 +50,9 @@ func TestRateLimit_TracksCallersIndependently(t *testing.T) {
 
 	handler := RateLimit(client, 1, time.Minute)(okHandler())
 
-	require.Equal(t, http.StatusOK, performRequest(handler, "203.0.113.30:1234").Code)
-	require.Equal(t, http.StatusTooManyRequests, performRequest(handler, "203.0.113.30:1234").Code)
-	require.Equal(t, http.StatusOK, performRequest(handler, "203.0.113.31:1234").Code)
+	require.Equal(t, http.StatusOK, performRequest(t, handler, "203.0.113.30:1234").Code)
+	require.Equal(t, http.StatusTooManyRequests, performRequest(t, handler, "203.0.113.30:1234").Code)
+	require.Equal(t, http.StatusOK, performRequest(t, handler, "203.0.113.31:1234").Code)
 }
 
 func okHandler() http.Handler {
@@ -61,8 +61,10 @@ func okHandler() http.Handler {
 	})
 }
 
-func performRequest(handler http.Handler, remoteAddr string) *httptest.ResponseRecorder {
-	request := httptest.NewRequest(http.MethodGet, "/v1/valuations", nil)
+func performRequest(t *testing.T, handler http.Handler, remoteAddr string) *httptest.ResponseRecorder {
+	t.Helper()
+
+	request := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/v1/valuations", nil)
 	request.RemoteAddr = remoteAddr
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, request)
@@ -83,7 +85,13 @@ func createRedisClient(ctx context.Context, t *testing.T) (*redis.Client, func()
 	client := redis.NewClient(&redis.Options{Addr: parsedAddr.Host})
 
 	return client, func() {
-		client.Close()
-		container.Terminate(ctx)
+		closeErr := client.Close()
+		if closeErr != nil {
+			t.Errorf("failed to close redis client: %v", closeErr)
+		}
+		terminateErr := container.Terminate(ctx)
+		if terminateErr != nil {
+			t.Errorf("failed to terminate redis container: %v", terminateErr)
+		}
 	}
 }

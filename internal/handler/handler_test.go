@@ -20,6 +20,8 @@ import (
 	"google.golang.org/genai"
 )
 
+var errRunnerFailed = errors.New("runner failed")
+
 func newTestHandler(t *testing.T, run func(agent.InvocationContext) iter.Seq2[*session.Event, error]) Handler {
 	t.Helper()
 
@@ -54,7 +56,7 @@ func TestAskToAgent(t *testing.T) {
 		h := newTestHandler(t, runOfSingleText(string(responseJSON)))
 
 		body := bytes.NewBufferString(`{"userId":"` + generateNewUUID() + `","message":"How much for a 2010 Toyota Prius?"}`)
-		r := httptest.NewRequest("POST", "/chat", body)
+		r := httptest.NewRequestWithContext(t.Context(), "POST", "/chat", body)
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)
@@ -81,7 +83,7 @@ func TestAskToAgent(t *testing.T) {
 		})
 
 		body := bytes.NewBufferString(`{"message":"How much for a 2010 Toyota Prius?"}`)
-		r := httptest.NewRequest("POST", "/chat", body)
+		r := httptest.NewRequestWithContext(t.Context(), "POST", "/chat", body)
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)
@@ -94,7 +96,7 @@ func TestAskToAgent(t *testing.T) {
 		h := newTestHandler(t, runOfSingleText(""))
 
 		body := bytes.NewBufferString(`{"message":"How much for a 2010 Toyota Prius?"}`)
-		r := httptest.NewRequest("POST", "/v1/valuations", body)
+		r := httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body)
 		r.Header.Set("X-User-Id", "not-a-uuid")
 		w := httptest.NewRecorder()
 
@@ -107,7 +109,7 @@ func TestAskToAgent(t *testing.T) {
 		h := newTestHandler(t, runOfSingleText(""))
 
 		body := bytes.NewBufferString("not-json")
-		r := httptest.NewRequest("POST", "/v1/valuations", body)
+		r := httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body)
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)
@@ -118,12 +120,12 @@ func TestAskToAgent(t *testing.T) {
 	t.Run("returns 500 when the runner yields an error", func(t *testing.T) {
 		h := newTestHandler(t, func(ic agent.InvocationContext) iter.Seq2[*session.Event, error] {
 			return func(yield func(*session.Event, error) bool) {
-				yield(nil, errors.New("runner failed"))
+				yield(nil, errRunnerFailed)
 			}
 		})
 
 		body := bytes.NewBufferString(`{"userId":"` + generateNewUUID() + `","message":"How much for a 2010 Toyota Prius?"}`)
-		r := httptest.NewRequest("POST", "/v1/valuations", body)
+		r := httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body)
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)
@@ -135,7 +137,7 @@ func TestAskToAgent(t *testing.T) {
 		h := newTestHandler(t, runOfSingleText("not-json"))
 
 		body := bytes.NewBufferString(`{"userId":"` + generateNewUUID() + `","message":"How much for a 2010 Toyota Prius?"}`)
-		r := httptest.NewRequest("POST", "/v1/valuations", body)
+		r := httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body)
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)

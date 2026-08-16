@@ -1,13 +1,20 @@
 package sessionservice
 
 import (
+	"fmt"
+
 	redissession "github.com/achetronic/adk-utils-go/session/redis"
 )
 
-// Create Redis backed SessionService
+// OfRedisBackedSessionService creates a Redis backed SessionService.
 func OfRedisBackedSessionService(redisAddr string, redisDB int) (*redissession.RedisSessionService, error) {
-	return redissession.NewRedisSessionService(redissession.RedisSessionServiceConfig{
+	sessionService, err := redissession.NewRedisSessionService(redissession.RedisSessionServiceConfig{
 		Addr: redisAddr,
 		DB:   redisDB,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("sessionservice: failed to create redis session service: %w", err)
+	}
+
+	return sessionService, nil
 }

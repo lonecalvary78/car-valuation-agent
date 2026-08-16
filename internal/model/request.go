@@ -3,6 +3,7 @@ package model
 import (
 	"car-valuation-agent/internal/infrastructure/validator"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 
@@ -12,16 +13,21 @@ import (
 type ChatRequest struct {
 	SessionId string `json:"sessionId"`
 	UserId    string `json:"userId"`
-	Message   string ` json:"message"`
+	Message   string `json:"message"`
 }
 
 func (chat *ChatRequest) FromJSON(requestBody []byte) error {
-	return sonic.Unmarshal(requestBody, chat)
+	err := sonic.Unmarshal(requestBody, chat)
+	if err != nil {
+		return fmt.Errorf("model: failed to unmarshal chat request: %w", err)
+	}
+	return nil
 }
 
 func (chat *ChatRequest) Validate() error {
 	validationErrors := make([]error, 0)
-	if validationError := validator.ValidateForRequiredOfString("UserId", chat.UserId); validationError != nil {
+	validationError := validator.ValidateForRequiredOfString("UserId", chat.UserId)
+	if validationError != nil {
 		validationErrors = append(validationErrors, validationError)
 	}
 

@@ -1,7 +1,7 @@
 package validator
 
 import (
-	"errors"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -25,7 +25,7 @@ func TestValidateForRequiredOfString(t *testing.T) {
 			Code:           "TC_VALIDATOR-STRING-002",
 			AttributeName:  "Field1",
 			AttributeValue: "",
-			ExpectedError:  errors.New("Field1 is required"),
+			ExpectedError:  fmt.Errorf("Field1 %w", ErrRequired),
 		},
 	}
 
@@ -50,7 +50,7 @@ func TestValidateForRequiredOfNumeric(t *testing.T) {
 			Code:           "TC-VALIDATOR-INT-001",
 			AttributeName:  "Field 1",
 			AttributeValue: 0,
-			ExpectedError:  errors.New("Field 1 is required"),
+			ExpectedError:  fmt.Errorf("Field 1 %w", ErrRequired),
 		},
 	}
 
@@ -76,7 +76,7 @@ func TestValidateForRequiredOfDuration(t *testing.T) {
 			Code:           "TC-VALIDATOR-INT-001",
 			AttributeName:  "Field 1",
 			AttributeValue: emptyDuration,
-			ExpectedError:  errors.New("Field 1 is required"),
+			ExpectedError:  fmt.Errorf("Field 1 %w", ErrRequired),
 		},
 	}
 

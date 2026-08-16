@@ -1,6 +1,8 @@
 package util
 
 import (
+	"fmt"
+
 	"google.golang.org/adk/v2/agent"
 	"google.golang.org/adk/v2/memory"
 	"google.golang.org/adk/v2/runner"
@@ -8,11 +10,16 @@ import (
 )
 
 func OfRunner(targetAgent agent.Agent, memoryService memory.Service, sessionService session.Service, withAutoCreateSession bool) (*runner.Runner, error) {
-	return runner.New(runner.Config{
+	createdRunner, err := runner.New(runner.Config{
 		AppName:           targetAgent.Name(),
 		Agent:             targetAgent,
 		SessionService:    sessionService,
 		MemoryService:     memoryService,
 		AutoCreateSession: withAutoCreateSession,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("util: failed to create runner: %w", err)
+	}
+
+	return createdRunner, nil
 }

@@ -5,9 +5,11 @@ import (
 	"car-valuation-agent/internal/infrastructure/util"
 	"car-valuation-agent/internal/model"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,67 +38,93 @@ func (h Handler) RegisterRoutes(authMiddleware middleware.Middleware) *http.Serv
 }
 
 func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 32<<10)
-	bodyContents, err := io.ReadAll(r.Body)
+	chatRequest, err := parseChatRequest(w, r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	var chatRequest model.ChatRequest
-	if err := chatRequest.FromJSON(bodyContents); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if r.Header.Get("X-User-Id") != "" {
-		userId, err := uuid.Parse(r.Header.Get("X-User-Id"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		chatRequest.SetUserId(userId)
-	}
-
-	if chatRequest.SessionId == "" {
-		sessionId := util.NewSessionId()
-		chatRequest.SetSessionId(sessionId)
-	}
-
-	if err := chatRequest.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), h.waitTimeout)
 	defer cancel()
 
-	content := genai.NewContentFromText(chatRequest.Message, genai.RoleUser)
-
-	var agentResponse string
-	for event, err := range h.activeAgentRunner.Run(ctx, chatRequest.UserId, chatRequest.SessionId, content, agent.RunConfig{}) {
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		if event.Content != nil {
-			for _, part := range event.Content.Parts {
-				if part.Text != "" && !part.Thought {
-					agentResponse += part.Text
-				}
-			}
-		}
-	}
-
-	var carValuationResponse model.CarValuationResponse
-	if err := util.FromJSON(util.ExtractJSONObject(agentResponse), &carValuationResponse); err != nil {
+	agentResponse, err := h.runAgent(ctx, chatRequest)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := util.WriteJSON(w, carValuationResponse, http.StatusOK); err != nil {
+	var carValuationResponse model.CarValuationResponse
+	err = util.FromJSON(util.ExtractJSONObject(agentResponse), &carValuationResponse)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = util.WriteJSON(w, carValuationResponse, http.StatusOK)
+	if err != nil {
 		log.Printf("askToAgent[error writing response: %v]", err)
 	}
+}
+
+// parseChatRequest reads and validates the incoming request, writing an error response and
+// returning a non-nil error when the request is malformed or invalid.
+func parseChatRequest(w http.ResponseWriter, r *http.Request) (model.ChatRequest, error) {
+	r.Body = http.MaxBytesReader(w, r.Body, 32<<10)
+	bodyContents, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return model.ChatRequest{}, fmt.Errorf("handler: failed to read request body: %w", err)
+	}
+
+	var chatRequest model.ChatRequest
+	err = chatRequest.FromJSON(bodyContents)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return model.ChatRequest{}, fmt.Errorf("handler: failed to parse request body: %w", err)
+	}
+
+	if userIDHeader := r.Header.Get("X-User-Id"); userIDHeader != "" {
+		userId, err := uuid.Parse(userIDHeader)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return model.ChatRequest{}, fmt.Errorf("handler: failed to parse X-User-Id header: %w", err)
+		}
+		chatRequest.SetUserId(userId)
+	}
+
+	if chatRequest.SessionId == "" {
+		chatRequest.SetSessionId(util.NewSessionId())
+	}
+
+	err = chatRequest.Validate()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return model.ChatRequest{}, fmt.Errorf("handler: invalid chat request: %w", err)
+	}
+
+	return chatRequest, nil
+}
+
+func (h Handler) runAgent(ctx context.Context, chatRequest model.ChatRequest) (string, error) {
+	content := genai.NewContentFromText(chatRequest.Message, genai.RoleUser)
+
+	var agentResponse strings.Builder
+	for event, err := range h.activeAgentRunner.Run(ctx, chatRequest.UserId, chatRequest.SessionId, content, agent.RunConfig{}) {
+		if err != nil {
+			return "", err
+		}
+
+		if event.Content == nil {
+			continue
+		}
+
+		for _, part := range event.Content.Parts {
+			if part.Text != "" && !part.Thought {
+				agentResponse.WriteString(part.Text)
+			}
+		}
+	}
+
+	return agentResponse.String(), nil
 }
 
 func (h Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +137,8 @@ func (h Handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 		status = http.StatusServiceUnavailable
 	}
 
-	if err := util.WriteJSON(w, response, status); err != nil {
+	err := util.WriteJSON(w, response, status)
+	if err != nil {
 		log.Printf("healthCheck[error writing response: %v]", err)
 	}
 }

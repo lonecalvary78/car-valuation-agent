@@ -28,5 +28,4 @@ func SetEnvForTesting(t *testing.T) {
 	t.Setenv("REDIS_DB", "0")
 	t.Setenv("RATE_LIMIT_REQUESTS", "60")
 	t.Setenv("RATE_LIMIT_WINDOW", "1m")
-
 }

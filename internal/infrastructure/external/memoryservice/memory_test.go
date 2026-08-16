@@ -5,6 +5,7 @@ import (
 	"car-valuation-agent/internal/infrastructure/util"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,6 +19,8 @@ import (
 	"google.golang.org/genai"
 )
 
+const embeddingModelName = "any-model"
+
 func newMockEmbeddingServer(t *testing.T) *httptest.Server {
 	t.Helper()
 
@@ -25,12 +28,15 @@ func newMockEmbeddingServer(t *testing.T) *httptest.Server {
 		embedding := make([]float32, 8)
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		err := json.NewEncoder(w).Encode(map[string]any{
 			"data": []map[string]any{
 				{"embedding": embedding, "index": 0},
 			},
-			"model": "any-model",
+			"model": embeddingModelName,
 		})
+		if err != nil {
+			t.Errorf("failed to encode mock embedding response: %v", err)
+		}
 	}))
 	t.Cleanup(server.Close)
 
@@ -41,17 +47,17 @@ func TestAddMemory(t *testing.T) {
 	ctx := context.Background()
 	postgresContainer, dbConnStr, err := createPostgresContrainer(ctx)
 	require.NoError(t, err)
-	defer postgresContainer.Terminate(ctx)
+	defer func() { require.NoError(t, postgresContainer.Terminate(ctx)) }()
 
 	embeddingServer := newMockEmbeddingServer(t)
 
 	pgBackedMemoryService, err := OfExternalMemoryService(ctx, dbConnStr, config.Model{
 		BaseUrl:   embeddingServer.URL,
 		ApiKey:    "dummyKey",
-		ModelName: "any-model",
+		ModelName: embeddingModelName,
 	})
 	require.NoError(t, err)
-	defer pgBackedMemoryService.Close()
+	defer func() { require.NoError(t, pgBackedMemoryService.Close()) }()
 
 	sessionService := session.InMemoryService()
 	createResp, err := sessionService.Create(ctx, &session.CreateRequest{
@@ -81,19 +87,19 @@ func TestSearchMemory(t *testing.T) {
 	ctx := context.Background()
 	postgresContainer, dbConnStr, err := createPostgresContrainer(ctx)
 	require.NoError(t, err)
-	defer postgresContainer.Terminate(ctx)
+	defer func() { require.NoError(t, postgresContainer.Terminate(ctx)) }()
 
 	embeddingServer := newMockEmbeddingServer(t)
 
 	pgBackedMemoryService, err := OfExternalMemoryService(ctx, dbConnStr, config.Model{
 		BaseUrl:   embeddingServer.URL,
 		ApiKey:    "dummyKey",
-		ModelName: "any-model",
+		ModelName: embeddingModelName,
 	})
 	require.NoError(t, err)
-	defer pgBackedMemoryService.Close()
+	defer func() { require.NoError(t, pgBackedMemoryService.Close()) }()
 
-	prepareMemoryForTest(ctx, pgBackedMemoryService, "test-app", "1232")
+	require.NoError(t, prepareMemoryForTest(ctx, pgBackedMemoryService, "test-app", "1232"))
 
 	searchResponse, err := pgBackedMemoryService.SearchMemory(ctx, &memory.SearchRequest{
 		UserID:  "1232",
@@ -102,7 +108,6 @@ func TestSearchMemory(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, searchResponse.Memories)
-
 }
 
 func prepareMemoryForTest(ctx context.Context, pgBackedMemoryService *postgres.PostgresMemoryService, appName string, userId string) error {
@@ -112,9 +117,8 @@ func prepareMemoryForTest(ctx context.Context, pgBackedMemoryService *postgres.P
 		UserID:    userId,
 		SessionID: util.NewSessionId().String(),
 	})
-
 	if err != nil {
-		return err
+		return fmt.Errorf("memory_test: failed to create session: %w", err)
 	}
 
 	err = sessionService.AppendEvent(ctx, createResp.Session, &session.Event{
@@ -128,20 +132,28 @@ func prepareMemoryForTest(ctx context.Context, pgBackedMemoryService *postgres.P
 		},
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("memory_test: failed to append event: %w", err)
 	}
 
 	err = pgBackedMemoryService.AddSessionToMemory(ctx, createResp.Session)
 	if err != nil {
-		return err
+		return fmt.Errorf("memory_test: failed to add session to memory: %w", err)
 	}
+
 	return nil
 }
 
 func createPostgresContrainer(ctx context.Context) (*pgcontainer.PostgresContainer, string, error) {
-	var dbConnStr string
-	pgContainer, err := pgcontainer.Run(ctx, "pgvector/pgvector:pg18", pgcontainer.WithDatabase("memory-db"), pgcontainer.WithUsername("postgres"), pgcontainer.WithPassword("postgres"), pgcontainer.BasicWaitStrategies())
+	pgContainer, err := pgcontainer.Run(ctx, "pgvector/pgvector:pg18", pgcontainer.WithDatabase("memory-db"),
+		pgcontainer.WithUsername("postgres"), pgcontainer.WithPassword("postgres"), pgcontainer.BasicWaitStrategies())
+	if err != nil {
+		return nil, "", fmt.Errorf("memory_test: failed to start postgres container: %w", err)
+	}
 
-	dbConnStr, err = pgContainer.ConnectionString(ctx, "sslmode=disable")
-	return pgContainer, dbConnStr, err
+	dbConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	if err != nil {
+		return nil, "", fmt.Errorf("memory_test: failed to get connection string: %w", err)
+	}
+
+	return pgContainer, dbConnStr, nil
 }

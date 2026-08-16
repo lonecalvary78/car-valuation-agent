@@ -2,6 +2,7 @@ package sessionservice
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"testing"
 
@@ -15,12 +16,12 @@ func TestCreateNewSession(t *testing.T) {
 	redis, redisAddr, err := createRedisContainer(ctx)
 	require.NoError(t, err)
 
-	defer redis.Terminate(ctx)
+	defer func() { require.NoError(t, redis.Terminate(ctx)) }()
 
 	redisBacedSessionService, err := OfRedisBackedSessionService(redisAddr, 0)
 	require.NoError(t, err)
 
-	defer redisBacedSessionService.Close()
+	defer func() { require.NoError(t, redisBacedSessionService.Close()) }()
 	response, err := redisBacedSessionService.Create(ctx, &session.CreateRequest{
 		SessionID: "4767576",
 		UserID:    "12345",
@@ -32,14 +33,20 @@ func TestCreateNewSession(t *testing.T) {
 }
 
 func createRedisContainer(ctx context.Context) (*rediscontainer.RedisContainer, string, error) {
-	var redisAddr string
 	redis, err := rediscontainer.Run(ctx, "redis:alpine", rediscontainer.WithLogLevel(rediscontainer.LogLevelDebug))
+	if err != nil {
+		return nil, "", fmt.Errorf("session_test: failed to start redis container: %w", err)
+	}
 
 	redisConnStr, err := redis.ConnectionString(ctx)
+	if err != nil {
+		return nil, "", fmt.Errorf("session_test: failed to get connection string: %w", err)
+	}
 
 	parsedAddr, err := url.Parse(redisConnStr)
+	if err != nil {
+		return nil, "", fmt.Errorf("session_test: failed to parse connection string: %w", err)
+	}
 
-	redisAddr = parsedAddr.Host
-
-	return redis, redisAddr, err
+	return redis, parsedAddr.Host, nil
 }

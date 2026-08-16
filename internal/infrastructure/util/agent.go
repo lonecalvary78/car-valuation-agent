@@ -3,6 +3,7 @@ package util
 import (
 	"car-valuation-agent/internal/infrastructure/config"
 	"context"
+	"fmt"
 
 	"google.golang.org/adk/v2/agent"
 	"google.golang.org/adk/v2/agent/llmagent"
@@ -24,10 +25,15 @@ func OfAgent(ctx context.Context, instruction string, appConfig config.AppConfig
 }
 
 func ofModel(ctx context.Context, modelConfig config.Model) (model.LLM, error) {
-	return openaimodel.NewModel(ctx, modelConfig.ModelName, &openaimodel.ClientConfig{
+	llm, err := openaimodel.NewModel(ctx, modelConfig.ModelName, &openaimodel.ClientConfig{
 		BaseURL: modelConfig.BaseUrl,
 		APIKey:  modelConfig.ApiKey,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("util: failed to create model: %w", err)
+	}
+
+	return llm, nil
 }
 
 func withSimpleSetup(ctx context.Context, instruction string, agentConfig config.Agent, modelConfig config.Model, tools []tool.Toolset) (agent.Agent, error) {
@@ -36,12 +42,17 @@ func withSimpleSetup(ctx context.Context, instruction string, agentConfig config
 		return nil, err
 	}
 
-	return llmagent.New(llmagent.Config{
+	createdAgent, err := llmagent.New(llmagent.Config{
 		Name:        agentConfig.Name,
 		Model:       llm,
 		Instruction: instruction,
 		Toolsets:    tools,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("util: failed to create agent: %w", err)
+	}
+
+	return createdAgent, nil
 }
 
 func withAdvanceSetup(ctx context.Context, instruction string, agentConfig config.Agent, modelConfig config.Model, advancedSetup config.AdvancedSetup, tools []tool.Toolset) (agent.Agent, error) {
@@ -50,7 +61,7 @@ func withAdvanceSetup(ctx context.Context, instruction string, agentConfig confi
 		return nil, err
 	}
 
-	return llmagent.New(llmagent.Config{
+	createdAgent, err := llmagent.New(llmagent.Config{
 		Name:  agentConfig.Name,
 		Model: llm,
 		GenerateContentConfig: &genai.GenerateContentConfig{
@@ -64,4 +75,9 @@ func withAdvanceSetup(ctx context.Context, instruction string, agentConfig confi
 		Instruction: instruction,
 		Toolsets:    tools,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("util: failed to create agent: %w", err)
+	}
+
+	return createdAgent, nil
 }

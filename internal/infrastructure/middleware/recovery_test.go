@@ -21,7 +21,7 @@ func TestRecovery(t *testing.T) {
 			panic("secret internal detail")
 		}))
 		w := httptest.NewRecorder()
-		h.ServeHTTP(w, httptest.NewRequest("GET", "/boom", nil))
+		h.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), "GET", "/boom", nil))
 
 		require.Equal(t, http.StatusInternalServerError, w.Code)
 		require.NotContains(t, w.Body.String(), "secret internal detail")

@@ -3,13 +3,14 @@ package memoryservice
 import (
 	"car-valuation-agent/internal/infrastructure/config"
 	"context"
+	"fmt"
 
 	pgmemory "github.com/achetronic/adk-utils-go/memory/postgres"
 )
 
-// Creating the PostgreSQL backed Memory Service
+// OfExternalMemoryService creates the PostgreSQL backed Memory Service.
 func OfExternalMemoryService(ctx context.Context, dbConnStr string, modelConfig config.Model) (*pgmemory.PostgresMemoryService, error) {
-	return pgmemory.NewPostgresMemoryService(ctx, pgmemory.PostgresMemoryServiceConfig{
+	memoryService, err := pgmemory.NewPostgresMemoryService(ctx, pgmemory.PostgresMemoryServiceConfig{
 		ConnString: dbConnStr,
 		EmbeddingModel: pgmemory.NewOpenAICompatibleEmbedding(pgmemory.OpenAICompatibleEmbeddingConfig{
 			BaseURL: modelConfig.BaseUrl,
@@ -17,4 +18,9 @@ func OfExternalMemoryService(ctx context.Context, dbConnStr string, modelConfig 
 			Model:   modelConfig.ModelName,
 		}),
 	})
+	if err != nil {
+		return nil, fmt.Errorf("memoryservice: failed to create postgres memory service: %w", err)
+	}
+
+	return memoryService, nil
 }
