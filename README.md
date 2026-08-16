@@ -12,10 +12,8 @@ An HTTP service backed by an LLM agent (Google ADK) with any openweight model ba
 The agent is instructed to answer using a `car-valuer` skill (see [skills/car-valuer/SKILL.md](skills/car-valuer/SKILL.md)) rather than its own background knowledge, and replies with a structured JSON price range.
 
 ## Trade-offs
-- Both memory and session are still using in-memory
 - No setup with TLS
 - No support for Gemini model support
-- No user authentication
 
 ## Stack
 - **Language**: Go
