@@ -10,6 +10,7 @@ type CarValuationResponse struct {
 	Brand    string      `json:"brand"`
 	Model    string      `json:"model"`
 	Year     int         `json:"year"`
+	Milleage int32       `json:"milleage"`
 	Market   string      `json:"market"`
 	Price    QuotedPrice `json:"quoted_price"`
 	QuotedAt time.Time   `json:"quoted_at"`

@@ -7,6 +7,7 @@ You are an Car Sales Specialist. Please find the market price of th used car bas
 - Model
 - Year
 - Market
+- Milleage
 
 Respond with ONLY the JSON below — no summary, notes, or other text. Use exactly these keys,
 with quoted_price as a price RANGE (lower and higher bounds), not a single value:
@@ -15,6 +16,7 @@ with quoted_price as a price RANGE (lower and higher bounds), not a single value
   "brand": "${Brand}",
   "model": "${Model}",
   "year": ${Year},
+  "milleage": ${Milleage},
   "market": "${Market}",
   "quoted_price": {
     "currency": "${Local Currency}",
