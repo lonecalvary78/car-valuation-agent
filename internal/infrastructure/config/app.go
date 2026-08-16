@@ -12,6 +12,7 @@ type AppConfig struct {
 	keycloak    Keycloak
 	redis       Redis
 	rateLimit   RateLimit
+	memory      Memory
 	waitTimeout time.Duration
 }
 
@@ -33,6 +34,10 @@ func (config AppConfig) GetRedis() Redis {
 
 func (config AppConfig) GetRateLimit() RateLimit {
 	return config.rateLimit
+}
+
+func (config AppConfig) GetMemory() Memory {
+	return config.memory
 }
 
 func (config AppConfig) GetWaitTimeout() time.Duration {
@@ -68,6 +73,9 @@ func (config AppConfig) Validate() error {
 		// RateLimit Config
 		validator.ValidateForRequiredOfNumeric("RateLimit - Limit", config.GetRateLimit().Limit),
 		validator.ValidateForRequiredOfDuration("RateLimit - Window", config.GetRateLimit().Window),
+
+		// Memory Config
+		validator.ValidateForRequiredOfString("Memory - DBUrl", config.GetMemory().DBUrl),
 	}
 
 	return errors.Join(validationErrors...)

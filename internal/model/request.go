@@ -12,8 +12,10 @@ import (
 
 type ChatRequest struct {
 	SessionId string `json:"sessionId"`
-	UserId    string `json:"userId"`
-	Message   string `json:"message"`
+	// UserId is never taken from client input; it is set by the handler from the
+	// authenticated request context so a caller cannot act on another user's behalf.
+	UserId  string `json:"-"`
+	Message string `json:"message"`
 }
 
 func (chat *ChatRequest) FromJSON(requestBody []byte) error {
@@ -26,7 +28,7 @@ func (chat *ChatRequest) FromJSON(requestBody []byte) error {
 
 func (chat *ChatRequest) Validate() error {
 	validationErrors := make([]error, 0)
-	validationError := validator.ValidateForRequiredOfString("UserId", chat.UserId)
+	validationError := validator.ValidateForRequiredOfString("Message", chat.Message)
 	if validationError != nil {
 		validationErrors = append(validationErrors, validationError)
 	}
@@ -36,8 +38,4 @@ func (chat *ChatRequest) Validate() error {
 
 func (chat *ChatRequest) SetSessionId(sesionId uuid.UUID) {
 	chat.SessionId = sesionId.String()
-}
-
-func (chat *ChatRequest) SetUserId(userId uuid.UUID) {
-	chat.UserId = userId.String()
 }

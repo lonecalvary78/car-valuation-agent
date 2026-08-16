@@ -2,11 +2,14 @@ package handler
 
 import (
 	"bytes"
+	"car-valuation-agent/internal/infrastructure/middleware"
 	"car-valuation-agent/internal/infrastructure/util"
 	"car-valuation-agent/internal/model"
+	"context"
 	"errors"
 	"io"
 	"iter"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -37,6 +40,11 @@ func newTestHandler(t *testing.T, run func(agent.InvocationContext) iter.Seq2[*s
 	return New(*agentRunner, 6*time.Second)
 }
 
+func withAuthenticatedUser(r *http.Request) *http.Request {
+	user := middleware.User{ID: generateNewUUID(), Username: "test-user"}
+	return r.WithContext(context.WithValue(r.Context(), middleware.UserKey, user))
+}
+
 func runOfSingleText(text string) func(agent.InvocationContext) iter.Seq2[*session.Event, error] {
 	return func(ic agent.InvocationContext) iter.Seq2[*session.Event, error] {
 		return func(yield func(*session.Event, error) bool) {
@@ -55,8 +63,8 @@ func TestAskToAgent(t *testing.T) {
 
 		h := newTestHandler(t, runOfSingleText(string(responseJSON)))
 
-		body := bytes.NewBufferString(`{"userId":"` + generateNewUUID() + `","message":"How much for a 2010 Toyota Prius?"}`)
-		r := httptest.NewRequestWithContext(t.Context(), "POST", "/chat", body)
+		body := bytes.NewBufferString(`{"message":"How much for a 2010 Toyota Prius?"}`)
+		r := withAuthenticatedUser(httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body))
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)
@@ -75,15 +83,15 @@ func TestAskToAgent(t *testing.T) {
 		require.True(t, expectedResponse.Price.HigherPrice.Equal(carValuationResponse.Price.HigherPrice))
 	})
 
-	t.Run("returns 400 when userId is missing", func(t *testing.T) {
+	t.Run("returns 400 when message is missing", func(t *testing.T) {
 		runInvoked := false
 		h := newTestHandler(t, func(ic agent.InvocationContext) iter.Seq2[*session.Event, error] {
 			runInvoked = true
 			return func(yield func(*session.Event, error) bool) {}
 		})
 
-		body := bytes.NewBufferString(`{"message":"How much for a 2010 Toyota Prius?"}`)
-		r := httptest.NewRequestWithContext(t.Context(), "POST", "/chat", body)
+		body := bytes.NewBufferString(`{}`)
+		r := withAuthenticatedUser(httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body))
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)
@@ -92,24 +100,28 @@ func TestAskToAgent(t *testing.T) {
 		require.False(t, runInvoked, "the agent should not run when validation fails")
 	})
 
-	t.Run("returns 400 when X-User-Id header is not a valid uuid", func(t *testing.T) {
-		h := newTestHandler(t, runOfSingleText(""))
+	t.Run("returns 401 when there is no authenticated user in the request context", func(t *testing.T) {
+		runInvoked := false
+		h := newTestHandler(t, func(ic agent.InvocationContext) iter.Seq2[*session.Event, error] {
+			runInvoked = true
+			return func(yield func(*session.Event, error) bool) {}
+		})
 
 		body := bytes.NewBufferString(`{"message":"How much for a 2010 Toyota Prius?"}`)
 		r := httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body)
-		r.Header.Set("X-User-Id", "not-a-uuid")
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)
 
-		require.Equal(t, 400, w.Code)
+		require.Equal(t, 401, w.Code)
+		require.False(t, runInvoked, "the agent should not run without an authenticated user")
 	})
 
-	t.Run("returns 500 when the request body is not valid JSON", func(t *testing.T) {
+	t.Run("returns 400 when the request body is not valid JSON", func(t *testing.T) {
 		h := newTestHandler(t, runOfSingleText(""))
 
 		body := bytes.NewBufferString("not-json")
-		r := httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body)
+		r := withAuthenticatedUser(httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body))
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)
@@ -124,8 +136,8 @@ func TestAskToAgent(t *testing.T) {
 			}
 		})
 
-		body := bytes.NewBufferString(`{"userId":"` + generateNewUUID() + `","message":"How much for a 2010 Toyota Prius?"}`)
-		r := httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body)
+		body := bytes.NewBufferString(`{"message":"How much for a 2010 Toyota Prius?"}`)
+		r := withAuthenticatedUser(httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body))
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)
@@ -136,8 +148,8 @@ func TestAskToAgent(t *testing.T) {
 	t.Run("returns 500 when the agent text is not valid CarValuationResponse JSON", func(t *testing.T) {
 		h := newTestHandler(t, runOfSingleText("not-json"))
 
-		body := bytes.NewBufferString(`{"userId":"` + generateNewUUID() + `","message":"How much for a 2010 Toyota Prius?"}`)
-		r := httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body)
+		body := bytes.NewBufferString(`{"message":"How much for a 2010 Toyota Prius?"}`)
+		r := withAuthenticatedUser(httptest.NewRequestWithContext(t.Context(), "POST", "/v1/valuations", body))
 		w := httptest.NewRecorder()
 
 		h.askToAgent(w, r)

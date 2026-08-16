@@ -58,6 +58,9 @@ func Load() (AppConfig, error) {
 			Limit:  getEnvAsInt(os.Getenv("RATE_LIMIT_REQUESTS"), 60),
 			Window: rateLimitWindow,
 		},
+		memory: Memory{
+			DBUrl: os.Getenv("MEMORY_DB_URL"),
+		},
 		waitTimeout: waitTimeout,
 	}
 	err = appConfig.Validate()

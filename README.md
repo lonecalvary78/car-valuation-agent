@@ -35,6 +35,7 @@ Config is loaded from environment variables:
 | `MODEL_NAME` | Model identifier passed to the provider | — |
 | `SKILL_LOCATION` | Filesystem path containing skill definitions | — |
 | `WAIT_TIMEOUT` | Wait for the response from the agent(e.g. `60s` ) | `60s` |
+| `MEMORY_DB_URL` | Postgres connection string (pgvector) backing long-term agent memory | — |
 
 
 > Binding `SERVER_HOST` to `0.0.0.0` to serve both local and docker exposed.

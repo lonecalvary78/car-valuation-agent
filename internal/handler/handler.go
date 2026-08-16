@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"google.golang.org/adk/v2/agent"
 	"google.golang.org/adk/v2/runner"
 	"google.golang.org/genai"
@@ -42,6 +41,13 @@ func (h Handler) askToAgent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+
+	user, ok := middleware.UserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "authenticated user not found in request context", http.StatusUnauthorized)
+		return
+	}
+	chatRequest.UserId = user.ID
 
 	ctx, cancel := context.WithTimeout(r.Context(), h.waitTimeout)
 	defer cancel()
@@ -80,15 +86,6 @@ func parseChatRequest(w http.ResponseWriter, r *http.Request) (model.ChatRequest
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return model.ChatRequest{}, fmt.Errorf("handler: failed to parse request body: %w", err)
-	}
-
-	if userIDHeader := r.Header.Get("X-User-Id"); userIDHeader != "" {
-		userId, err := uuid.Parse(userIDHeader)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return model.ChatRequest{}, fmt.Errorf("handler: failed to parse X-User-Id header: %w", err)
-		}
-		chatRequest.SetUserId(userId)
 	}
 
 	if chatRequest.SessionId == "" {

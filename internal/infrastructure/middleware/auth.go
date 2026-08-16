@@ -46,6 +46,11 @@ func Auth(client *keycloak.Client) Middleware {
 	}
 }
 
+func UserFromContext(ctx context.Context) (User, bool) {
+	user, ok := ctx.Value(UserKey).(User)
+	return user, ok
+}
+
 func extractBearerToken(r *http.Request) (string, bool) {
 	const prefix = "Bearer "
 	authorization := r.Header.Get("Authorization")

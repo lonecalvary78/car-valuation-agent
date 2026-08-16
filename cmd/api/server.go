@@ -20,6 +20,7 @@ import (
 	"google.golang.org/adk/v2/session"
 	"google.golang.org/adk/v2/tool"
 
+	pgmemory "github.com/achetronic/adk-utils-go/memory/postgres"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -42,7 +43,8 @@ func main() {
 
 	skillBasedTool := must(util.OfSkillBasedTool(ctx, appConfig.GetAgent().GetSkill().Location))
 	carValuerAgent := must(util.OfAgent(ctx, agentInstruction, appConfig, []tool.Toolset{skillBasedTool}))
-	externalMemoryService := must(memoryservice.OfExternalMemoryService(ctx, "", appConfig.GetAgent().GetModel()))
+	externalMemoryService := must(memoryservice.OfExternalMemoryService(ctx, appConfig.GetMemory().DBUrl, appConfig.GetAgent().GetModel()))
+	defer closeMemoryService(externalMemoryService)
 	agentRunner := must(util.OfRunner(carValuerAgent, externalMemoryService, session.InMemoryService(), true))
 
 	keycloakClient := must(keycloak.NewClient(ctx, appConfig.GetKeycloak().BaseUrl,
@@ -79,6 +81,13 @@ func closeRedisClient(redisClient *redis.Client) {
 	err := redisClient.Close()
 	if err != nil {
 		log.Printf("error closing redis client: %v", err)
+	}
+}
+
+func closeMemoryService(memoryService *pgmemory.PostgresMemoryService) {
+	err := memoryService.Close()
+	if err != nil {
+		log.Printf("error closing memory service: %v", err)
 	}
 }
 
