@@ -59,7 +59,7 @@ go vet ./...                 # Static analysis
 Example:
 
 ```bash
-curl -X POST localhost:8080/chat \
+curl -X POST localhost:8080/v1/valuations \
   -H 'Content-Type: application/json' \
   -d '{"userId": "u1", "sessionId": "s1", "message": "2019 Toyota Camry in the US"}'
 ```
