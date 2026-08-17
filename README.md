@@ -18,6 +18,8 @@ The agent is instructed to answer using a `car-valuer` skill (see [skills/car-va
 ## Stack
 - **Language**: Go
 - **Libraries**: `net/http`, [`adk-go`](https://google.golang.org/adk/v2), [`sonic`](https://github.com/bytedance/sonic) (JSON), [`decimal`](https://github.com/shopspring/decimal) (money)
+- **Databases**: `pgvector` and `redis` for storing both memory and session
+- **Identify Management**: `keycloak`
 
 ## Configuration
 
